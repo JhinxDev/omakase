@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0b0710">
+  <meta name="theme-color" content="#f4f0e7">
   <meta name="description" content="Find your next anime through your own watch history and taste. Try the guest counter with your own model key; Lite accounts are invitation-only.">
   <title>Omakase | Your anime tasting menu</title>
   <link rel="canonical" href="https://omakase.jhinx.dev/">
@@ -11,13 +11,20 @@
   <meta property="og:url" content="https://omakase.jhinx.dev/">
   <meta property="og:title" content="Omakase | Your anime tasting menu">
   <meta property="og:description" content="Find your next anime through your own watch history and taste. Try the guest counter with your own model key; Lite accounts are invitation-only.">
-  <meta name="twitter:card" content="summary">
+  <meta property="og:image" content="https://omakase.jhinx.dev/static/generated/omakase-atelier.webp?v=9b7fb70c9ebd">
+  <meta property="og:image:alt" content="A moonlit fantasy workshop with five framed landscapes, a tea cup, and a modern tablet on the recommendation counter">
+  <meta name="twitter:image" content="https://omakase.jhinx.dev/static/generated/omakase-atelier.webp?v=9b7fb70c9ebd">
+  <meta name="twitter:image:alt" content="A moonlit fantasy workshop with five framed landscapes, a tea cup, and a modern tablet on the recommendation counter">
+  <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Omakase | Your anime tasting menu">
   <meta name="twitter:description" content="Find your next anime through your own watch history and taste. Try the guest counter with your own model key; Lite accounts are invitation-only.">
   <link rel="stylesheet" href="/static/style.css?v={{ asset_version }}">
+  <link rel="stylesheet" href="/static/result_menu.css?v={{ asset_version }}">
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
   <script src="/static/account_state.js?v={{ asset_version }}" defer></script>
   <script src="/static/app.js?v={{ asset_version }}" defer></script>
+  <script src="/static/menu_receipt.js?v={{ asset_version }}" defer></script>
+  <script src="/static/menu_study.js?v={{ asset_version }}" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#counter">Skip to the counter</a>
@@ -39,31 +46,72 @@
     <section class="welcome" aria-labelledby="hero-title">
       <div class="welcome__copy">
         <p class="kicker">お任せ / a personal anime counter</p>
-        <h1 id="hero-title">Less scrolling.<br>A better <em>next watch.</em></h1>
-        <p class="hero-copy">Your taste has a story. Bring the anime you have loved, the ones you have left behind, and a few honest preferences. Leave with a small menu made around you.</p>
+        <h1 id="hero-title">Your next anime,<br><em>chosen around you.</em></h1>
+        <p class="hero-copy">Bring your watch history. Add what you are in the mood for. Get a small tasting menu, with a reason behind every choice.</p>
         <div class="welcome__actions"><a class="button button--primary" href="#counter">Prepare my menu <span aria-hidden="true">↗</span></a><a class="text-link" href="#field-guide">How it works <span aria-hidden="true">↓</span></a></div>
-        <p class="welcome__note">Guest menus need no account. You bring a key from your chosen model provider and approve its usage charges there.</p>
+        <p class="welcome__note">No account needed for a guest menu. Bring your own model key.</p>
       </div>
       <figure class="welcome__art">
+        <div class="sample-room">
         <img src="/static/generated/omakase-atelier.webp" alt="A moonlit fantasy workshop with five framed landscapes, a tea cup, and a modern tablet on the recommendation counter" width="1440" height="810" fetchpriority="high">
-        <figcaption><span>THE RECOMMENDATION ROOM</span><span>Five possibilities. Your taste.</span></figcaption>
+          <span class="sample-room__mark" data-pick="0" hidden aria-hidden="true"></span>
+          <span class="sample-room__mark" data-pick="1" hidden aria-hidden="true"></span>
+          <span class="sample-room__mark" data-pick="2" hidden aria-hidden="true"></span>
+          <span class="sample-room__mark" data-pick="3" hidden aria-hidden="true"></span>
+          <span class="sample-room__mark" data-pick="4" hidden aria-hidden="true"></span>
+        </div>
+        <figcaption><span>THE ILLUSTRATED MENU</span><span>Five scenes. Five possibilities.</span></figcaption>
+        <details class="menu-study">
+          <summary>Explore how a pick is explained</summary>
+          <div class="menu-study__body">
+            <p class="menu-study__scope">Fictional titles and example ratings. This study calls no model and uses no entered information.</p>
+            <div class="menu-study__choices" role="group" aria-label="Illustrated example picks" hidden>
+              <button type="button" data-example-pick="0" aria-pressed="true" aria-label="Example 1: Nightbridge">01</button>
+              <button type="button" data-example-pick="1" aria-pressed="false" aria-label="Example 2: The Far Shore">02</button>
+              <button type="button" data-example-pick="2" aria-pressed="false" aria-label="Example 3: Paper Lanterns">03</button>
+              <button type="button" data-example-pick="3" aria-pressed="false" aria-label="Example 4: Rain Atlas">04</button>
+              <button type="button" data-example-pick="4" aria-pressed="false" aria-label="Example 5: Red Thread">05</button>
+            </div>
+            <div class="menu-study__picks" aria-live="polite" aria-atomic="true">
+              <article data-example-card="0">
+                <p class="menu-study__course">01 / A quiet mystery</p><h2>Nightbridge</h2>
+                <p>A patient mystery told through conversations. It continues the quiet suspense in the example viewer's history.</p>
+                <dl><div><dt>History pairing</dt><dd>Lantern District <span>Rated 9/10 in this example</span></dd></div><div><dt>Estimated fit</dt><dd>8.6<span>A prediction to weigh</span></dd></div></dl>
+              </article>
+              <article data-example-card="1">
+                <p class="menu-study__course">02 / A wider journey</p><h2>The Far Shore</h2>
+                <p>Trades close city streets for a long journey, keeping the example viewer's preference for atmosphere over constant action.</p>
+                <dl><div><dt>History pairing</dt><dd>Night Ferry <span>Rated 8/10 in this example</span></dd></div><div><dt>Estimated fit</dt><dd>8.3<span>A prediction to weigh</span></dd></div></dl>
+              </article>
+              <article data-example-card="2">
+                <p class="menu-study__course">03 / A warmer choice</p><h2>Paper Lanterns</h2>
+                <p>Keeps the small ensemble the example viewer enjoys, with a gentler story for notes asking for something lighter.</p>
+                <dl><div><dt>History pairing</dt><dd>Window Seat <span>Rated 8/10 in this example</span></dd></div><div><dt>Estimated fit</dt><dd>8.1<span>A prediction to weigh</span></dd></div></dl>
+              </article>
+              <article data-example-card="3">
+                <p class="menu-study__course">04 / A change of pace</p><h2>Rain Atlas</h2>
+                <p>Brings the example viewer's love of careful world building into a slower setting. The reason makes that tradeoff visible.</p>
+                <dl><div><dt>History pairing</dt><dd>City of Echoes <span>Rated 9/10 in this example</span></dd></div><div><dt>Estimated fit</dt><dd>8.0<span>A prediction to weigh</span></dd></div></dl>
+              </article>
+              <article data-example-card="4">
+                <p class="menu-study__course">05 / A sharper turn</p><h2>Red Thread</h2>
+                <p>An unfamiliar setting with the same tight friendships as the example history. The pairing explains the stretch beyond a familiar genre.</p>
+                <dl><div><dt>History pairing</dt><dd>Lantern District <span>Rated 9/10 in this example</span></dd></div><div><dt>Estimated fit</dt><dd>7.9<span>A prediction to weigh</span></dd></div></dl>
+              </article>
+            </div>
+            <p class="menu-study__footnote">A real menu includes the model's reason, a match from your history and an estimated score. Predictions are a starting point for your choice.</p>
+          </div>
+        </details>
       </figure>
     </section>
     <section class="counter-shell" id="counter" aria-labelledby="counter-title">
-      <aside class="counter-notes">
-        <p class="kicker">01 / Take a seat</p>
-        <h2 id="counter-title">Your next story<br>starts here.</h2>
-        <p>A considered shortlist, with a reason behind each choice. Your scores supply the reference points; your notes add the nuance.</p>
-        <ol class="counter-notes__steps"><li><span>01</span><div><strong>Your model</strong><p>Choose the provider you already use.</p></div></li><li><span>02</span><div><strong>Your history</strong><p>Bring an AniList username or a MAL export.</p></div></li><li><span>03</span><div><strong>Your taste</strong><p>Tell it what makes a story stay with you.</p></div></li></ol>
-        <p class="counter-notes__foot">No shared model subscription. Your provider bills your usage directly.</p>
-      </aside>
       <div class="order-panel">
         <header class="order-panel__header">
           <div>
             <p class="course-label">Tonight's counter</p>
-            <h2>Prepare your menu.</h2>
+            <h2 id="counter-title">Prepare your menu.</h2>
           </div>
-          <p class="order-panel__intro">Choose a provider, add your watch history, then shape the shortlist. You can return to any step.</p>
+          <p class="order-panel__intro">Three short courses. Return to any step to adjust your choices.</p>
         </header>
 
         <div class="privacy-receipt" aria-label="Privacy receipt">
@@ -79,17 +127,24 @@
           <p id="error-text"></p>
         </div>
 
-        <nav class="course-nav" aria-label="Recommendation setup">
+        <div class="preparation-slip">
+        <p class="preparation-slip__label"><span>Your preparation slip</span><span>Three courses, one menu</span></p>
+        <nav class="course-nav" aria-label="Recommendation setup and preparation status">
           <button type="button" class="course-nav__item is-active" data-course-target="model" aria-current="step">
-            <span>01</span><strong>Model</strong><small>Choose a provider</small>
+            <span>01</span><strong>Model</strong><small data-receipt="model">Choose a provider</small>
           </button>
           <button type="button" class="course-nav__item" data-course-target="history">
-            <span>02</span><strong>History</strong><small>Add your list</small>
+            <span>02</span><strong>History</strong><small data-receipt="history">Add your list</small>
           </button>
           <button type="button" class="course-nav__item" data-course-target="taste">
-            <span>03</span><strong>Taste</strong><small>Shape the menu</small>
+            <span>03</span><strong>Taste</strong><small data-receipt="taste">Shape the menu</small>
           </button>
         </nav>
+        <div class="preparation-slip__footer" hidden>
+          <p data-receipt="scope"></p>
+          <p data-receipt="next" role="status" aria-live="polite" aria-atomic="true"></p>
+        </div>
+        </div>
 
         <form id="setup-form" class="setup" novalidate>
           <input id="llm_type" name="llm_type" type="hidden" value="openai">
@@ -296,13 +351,20 @@
           <button id="cancel-request" class="button button--quiet" type="button">Cancel</button>
         </div>
       </div>
+      <div class="counter-notes">
+        <p class="kicker">Before you begin</p>
+        <h2>A little preparation.<br>A personal menu.</h2>
+        <div class="counter-notes__item"><h3>Bring your own key</h3><p>Use a model provider you already have access to. No shared model subscription: your provider bills your usage directly.</p></div>
+        <div class="counter-notes__item"><h3>Start with your history</h3><p>A public AniList username or a MyAnimeList XML export gives the menu its reference points. Taste notes add the nuance.</p></div>
+        <div class="counter-notes__item"><h3>Guest or invited Lite?</h3><p>Guest inputs are request-local. Invited Lite accounts can save a profile, encrypted keys and feedback. Each has its own storage boundary.</p><a class="text-link" href="#field-guide">Read the privacy and account guide <span aria-hidden="true">↓</span></a></div>
+      </div>
     </section>
 
     <section class="results" id="results" aria-labelledby="results-title" hidden>
       <header class="results__header">
         <div>
           <p class="course-label">Your table is ready</p>
-          <h2 id="results-title">Tonight's tasting menu.</h2>
+          <h2 id="results-title">Your personal tasting menu.</h2>
         </div>
         <div>
           <p id="results-meta"></p>
@@ -312,6 +374,18 @@
           </div>
         </div>
       </header>
+      <p class="result-menu-note">A reason for each pick, a pairing from your history, and an estimated fit. Fit scores are model predictions, not ratings or guarantees.</p>
+      <div class="result-menu-selection">
+        <p id="results-compare-help">Select up to two picks to compare. Remove a selected pick to make room for another.</p>
+        <p id="results-compare-status" role="status" aria-live="polite" aria-atomic="true">No picks selected for comparison.</p>
+      </div>
+      <section id="results-comparison" class="result-menu-comparison" aria-labelledby="results-comparison-title" hidden>
+        <header class="result-menu-comparison__header">
+          <div><p class="course-label">At the same table</p><h3 id="results-comparison-title" tabindex="-1">Compare your picks.</h3></div>
+          <button id="results-compare-clear" class="result-menu-button" type="button">Clear comparison</button>
+        </header>
+        <div id="results-comparison-list" class="result-menu-comparison__list"></div>
+      </section>
       <div class="results-list" id="results-list"></div>
     </section>
 
@@ -366,7 +440,7 @@
       </form>
     </dialog>
     <section class="field-guide" id="field-guide" aria-labelledby="guide-title">
-      <header><p class="kicker">02 / The field guide</p><h2 id="guide-title">A little context<br>before the first course.</h2><p>Two ways to use the counter. One separate companion for the library.</p></header>
+      <header><p class="kicker">02 / The field guide</p><h2 id="guide-title">Know your counter.</h2><p>Two ways to use the counter. One separate companion for the library.</p></header>
       <div class="field-guide__answers">
         <details open><summary>What do I need to try it?</summary><p>A model key from one of the listed providers, plus a public AniList username or a MyAnimeList XML export. Taste notes are optional. Provider charges and availability depend on your own account.</p></details>
         <details><summary>What happens to a guest request?</summary><p>Your key, watch history, and notes pass through this server to prepare the request for your selected provider. They are held for the request, not saved to a guest profile. The model provider has its own data policies. The entered key is cleared after a menu finishes successfully.</p></details>
