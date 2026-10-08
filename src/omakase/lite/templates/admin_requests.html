@@ -22,7 +22,7 @@
       <h2 id="accepted-invitations-heading">Accepted invitations</h2>
       <p>Everyone who has accepted a Lite invitation appears here.</p>
     </div>
-    <div class="request-table" role="list" aria-label="Accepted invitations">
+    <div class="request-table" {% if accepted_invitations %}role="list" aria-label="Accepted invitations"{% endif %}>
     {% for item in accepted_invitations %}
       <article class="request-row accepted-invitation-row{% if focus == item.public_number|string %} is-focus{% endif %}" role="listitem" data-invite-id="{{ item.id }}">
         <div class="request-id">#{{ item.public_number }}</div>

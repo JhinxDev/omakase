@@ -69,6 +69,9 @@ let pendingWatchedButton = null;
 let pendingWatchingButton = null;
 
 const byId = (id) => document.getElementById(id);
+const errorBannerHome = byId("error-banner").parentElement;
+const errorBannerNext = byId("error-banner").nextElementSibling;
+let invalidField = null;
 
 function showCourse(name, focusHeading = true) {
   if (!COURSE_ORDER.includes(name)) return;
@@ -88,20 +91,49 @@ function showCourse(name, focusHeading = true) {
     const heading = document.querySelector(`[data-course="${name}"] h3`);
     heading?.setAttribute("tabindex", "-1");
     heading?.focus({ preventScroll: true });
+    heading?.scrollIntoView({ behavior: "instant", block: "start" });
   }
 }
 
-function showError(message, course = activeCourse) {
+function showError(message, course = activeCourse, fieldId = null) {
+  clearError();
   if (course !== activeCourse) showCourse(course, false);
-  byId("error-text").textContent = message;
   const banner = byId("error-banner");
+  const field = fieldId ? byId(fieldId) : null;
+  const fieldGroup = field?.closest(".field, .upload-field");
+  if (fieldGroup) fieldGroup.prepend(banner);
+  else errorBannerHome.insertBefore(banner, errorBannerNext);
+  byId("error-text").textContent = message;
   banner.hidden = false;
-  banner.focus({ preventScroll: true });
+  if (field) {
+    invalidField = field;
+    field.setAttribute("aria-invalid", "true");
+    const descriptions = new Set((field.getAttribute("aria-describedby") || "").split(/\s+/).filter(Boolean));
+    descriptions.add("error-text");
+    field.setAttribute("aria-describedby", [...descriptions].join(" "));
+    if (fieldGroup?.matches(".upload-field")) focusInvalidField(fieldId);
+  } else {
+    banner.focus({ preventScroll: true });
+    banner.scrollIntoView({ behavior: "instant", block: "center" });
+  }
+}
+
+function focusInvalidField(id) {
+  const field = byId(id);
+  field.focus({ preventScroll: true });
+  field.closest(".field, .upload-field")?.scrollIntoView({ behavior: "instant", block: "center" });
 }
 
 function clearError() {
   byId("error-banner").hidden = true;
   byId("error-text").textContent = "";
+  if (invalidField) {
+    invalidField.removeAttribute("aria-invalid");
+    const descriptions = (invalidField.getAttribute("aria-describedby") || "").split(/\s+/).filter(id => id && id !== "error-text");
+    if (descriptions.length) invalidField.setAttribute("aria-describedby", descriptions.join(" "));
+    else invalidField.removeAttribute("aria-describedby");
+    invalidField = null;
+  }
 }
 
 function selectedValue(name) {
@@ -187,13 +219,13 @@ function validateCourse(name) {
         instanceUrl = null;
       }
       if (!instanceUrl || instanceUrl.protocol !== "https:" || !instanceUrl.hostname) {
-        showError("Enter the HTTPS URL for your OpenWebUI instance.", "model");
-        byId("openwebui_url").focus();
+        showError("Enter the HTTPS URL for your OpenWebUI instance.", "model", "openwebui_url");
+        focusInvalidField("openwebui_url");
         return false;
       }
       if (!byId("openwebui_model").value.trim()) {
-        showError("Enter the model ID exactly as it appears in OpenWebUI.", "model");
-        byId("openwebui_model").focus();
+        showError("Enter the model ID exactly as it appears in OpenWebUI.", "model", "openwebui_model");
+        focusInvalidField("openwebui_model");
         return false;
       }
     }
@@ -206,21 +238,22 @@ function validateCourse(name) {
           ? "Paste a key for this provider, or choose a provider with a saved key."
           : "Paste the key for the provider you selected.",
         "model",
+        "api_key",
       );
-      byId("api_key").focus();
+      focusInvalidField("api_key");
       return false;
     }
   }
   if (name === "history") {
     const source = byId("source").value;
     if (source === "anilist" && !byId("username").value.trim()) {
-      showError("Enter the public AniList username whose scores should guide the menu.", "history");
-      byId("username").focus();
+      showError("Enter the public AniList username whose scores should guide the menu.", "history", "username");
+      focusInvalidField("username");
       return false;
     }
     if (source === "myanimelist" && !malExportB64) {
-      showError("Choose a MyAnimeList Anime export before continuing.", "history");
-      byId("mal_export_file").focus();
+      showError("Choose a MyAnimeList Anime export before continuing.", "history", "mal_export_file");
+      focusInvalidField("mal_export_file");
       return false;
     }
   }
@@ -228,8 +261,8 @@ function validateCourse(name) {
     const skip = byId("skip_profile").checked;
     const planOnly = byId("use_planning").checked;
     if (!skip && !planOnly && !byId("profile").value.trim()) {
-      showError("Add a few taste notes, choose scores only, or limit the menu to Plan to Watch.", "taste");
-      byId("profile").focus();
+      showError("Add a few taste notes, choose scores only, or limit the menu to Plan to Watch.", "taste", "profile");
+      focusInvalidField("profile");
       return false;
     }
   }
@@ -252,7 +285,7 @@ function onMalFileSelected() {
     return;
   }
   if (file.size > MAX_UPLOAD_BYTES) {
-    showError("That file is larger than 10 MB. Check that you selected an Anime export.", "history");
+    showError("That file is larger than 10 MB. Check that you selected an Anime export.", "history", "mal_export_file");
     clearMalFile();
     return;
   }
@@ -266,7 +299,7 @@ function onMalFileSelected() {
     clearError();
   };
   reader.onerror = () => {
-    showError("Omakase could not read that export. Choose the file again.", "history");
+    showError("Omakase could not read that export. Choose the file again.", "history", "mal_export_file");
     clearMalFile();
   };
   reader.readAsDataURL(file);
@@ -399,6 +432,7 @@ async function submitRecommendations(preserveResults) {
     const data = await pollRecommendationJob(activeJobId, requestController.signal);
     displayResults(data);
     byId("api_key").value = "";
+    byId("api_key").dispatchEvent(new Event("input", { bubbles: true }));
     if (data.account_saved) await loadAccountSession(false);
   } catch (error) {
     if (error.name === "AbortError") showError("The menu was cancelled before it could be saved.", "taste");
@@ -407,6 +441,14 @@ async function submitRecommendations(preserveResults) {
     activeJobId = "";
     requestController = null;
     setLoading(false);
+    const outcome = !byId("error-banner").hidden
+      ? byId("error-banner")
+      : !byId("results").hidden ? byId("results-title") : null;
+    if (outcome) {
+      outcome.setAttribute("tabindex", "-1");
+      outcome.focus({ preventScroll: true });
+      outcome.scrollIntoView({ behavior: "instant", block: outcome.id === "results-title" ? "start" : "center" });
+    }
   }
 }
 
@@ -417,12 +459,121 @@ function createText(tag, className, value) {
   return element;
 }
 
+function predictedFit(recommendation) {
+  const value = recommendation.predicted_score;
+  if (value === null || value === undefined || value === "") return null;
+  const score = Number(value);
+  return Number.isFinite(score) ? score.toFixed(1) : null;
+}
+
+function recommendationReason(recommendation) {
+  return recommendation.reasoning || "The model did not include a reason for this pick.";
+}
+
+function recommendationPairing(recommendation) {
+  return recommendation.best_match_from_history || "No history pairing provided.";
+}
+
+function createMenuComparison(recommendations) {
+  const panel = byId("results-comparison");
+  if (!panel) return null;
+  const list = byId("results-comparison-list");
+  const status = byId("results-compare-status");
+  const selected = new Set();
+  const controls = new Map();
+  panel.hidden = true;
+  list.replaceChildren();
+  status.parentElement.hidden = recommendations.length < 2;
+  byId("results-compare-help").hidden = recommendations.length < 2;
+  status.textContent = recommendations.length < 2 ? "" : "No picks selected for comparison.";
+
+  function update() {
+    panel.hidden = selected.size === 0;
+    status.textContent = selected.size === 0
+      ? "No picks selected for comparison."
+      : `${selected.size} of 2 picks selected. ${selected.size === 1 ? "Choose another pick to compare." : "Your comparison is ready."}`;
+    controls.forEach(({ button, link }, index) => {
+      const active = selected.has(index);
+      button.setAttribute("aria-pressed", String(active));
+      button.textContent = active ? "Remove from comparison" : "Compare this pick";
+      button.setAttribute("aria-label", `${active ? "Remove" : "Compare"} ${recommendations[index].title}${active ? " from comparison" : ""}`);
+      button.disabled = !active && selected.size === 2;
+      link.hidden = !active;
+    });
+    list.replaceChildren();
+    selected.forEach(index => {
+      const recommendation = recommendations[index];
+      const article = document.createElement("article");
+      article.className = "result-menu-comparison__pick";
+      article.append(createText("p", "result-menu-label", `Pick ${String(index + 1).padStart(2, "0")}`), createText("h4", "result-menu-comparison__title", recommendation.title));
+      const details = document.createElement("dl");
+      const fit = predictedFit(recommendation);
+      [
+        ["Why this pick", recommendationReason(recommendation)],
+        ["History pairing", recommendationPairing(recommendation)],
+        ["Predicted fit", fit === null ? "Not provided" : `${fit} / 10 (model estimate)`],
+      ].forEach(([label, value]) => details.append(createText("dt", "result-menu-label", label), createText("dd", "", value)));
+      article.appendChild(details);
+      const remove = createText("button", "result-menu-button", "Remove this pick");
+      remove.type = "button";
+      remove.setAttribute("aria-label", `Remove ${recommendation.title} from comparison`);
+      remove.addEventListener("click", () => {
+        selected.delete(index);
+        update();
+        controls.get(index).button.focus();
+      });
+      article.appendChild(remove);
+      list.appendChild(article);
+    });
+  }
+
+  byId("results-compare-clear").onclick = () => {
+    const first = selected.values().next().value;
+    selected.clear();
+    update();
+    if (first !== undefined) controls.get(first).button.focus();
+  };
+
+  return {
+    addControl(index) {
+      if (recommendations.length < 2) return null;
+      const recommendation = recommendations[index];
+      const group = document.createElement("div");
+      group.className = "recommendation__compare";
+      const button = createText("button", "result-menu-button", "Compare this pick");
+      button.type = "button";
+      button.setAttribute("aria-label", `Compare ${recommendation.title}`);
+      button.setAttribute("aria-pressed", "false");
+      button.setAttribute("aria-controls", "results-comparison");
+      button.setAttribute("aria-describedby", "results-compare-help results-compare-status");
+      const link = createText("a", "result-menu-comparison-link", "Read comparison ↑");
+      link.href = "#results-comparison-title";
+      link.hidden = true;
+      link.addEventListener("click", event => {
+        event.preventDefault();
+        const heading = byId("results-comparison-title");
+        heading.focus({ preventScroll: true });
+        heading.scrollIntoView({ behavior: "instant", block: "start" });
+      });
+      controls.set(index, { button, link });
+      button.addEventListener("click", () => {
+        if (selected.has(index)) selected.delete(index);
+        else if (selected.size < 2) selected.add(index);
+        update();
+      });
+      group.append(button, link);
+      return group;
+    },
+  };
+}
+
 function displayResults(data) {
   const results = byId("results");
   const list = byId("results-list");
   list.replaceChildren();
   const sourceLabel = data.source === "myanimelist" ? "MAL export" : "AniList";
   byId("results-meta").textContent = `${sourceLabel} / ${data.recommendations.length} picks${data.account_saved ? " / saved to My counter" : ""}`;
+  const comparison = createMenuComparison(data.recommendations);
 
   if (!data.recommendations.length) {
     const empty = createText("p", "empty-state", "The model returned no usable picks. Try Quick mode or another provider.");
@@ -434,20 +585,23 @@ function displayResults(data) {
       article.style.setProperty("--result-index", index);
 
       const number = createText("span", "recommendation__number", String(index + 1).padStart(2, "0"));
+      number.setAttribute("aria-label", `Pick ${index + 1}`);
       const body = document.createElement("div");
       body.className = "recommendation__body";
       body.append(
         createText("h3", "recommendation__title", recommendation.title),
-        createText("p", "recommendation__reason", recommendation.reasoning || "A promising match from the selected model."),
+        createText("p", "result-menu-label", "Why this pick"),
+        createText("p", "recommendation__reason", recommendationReason(recommendation)),
       );
       const match = document.createElement("p");
       match.className = "recommendation__match";
-      match.append("Pairs with ", createText("strong", "", recommendation.best_match_from_history || "your scored history"));
+      match.append(createText("span", "result-menu-label", "History pairing"), createText("strong", "", recommendationPairing(recommendation)));
       body.appendChild(match);
 
       const score = document.createElement("div");
       score.className = "recommendation__score";
-      score.append(createText("strong", "", Number(recommendation.predicted_score || 0).toFixed(1)), createText("span", "", "/ 10 fit"));
+      const fit = predictedFit(recommendation);
+      score.append(createText("span", "result-menu-label", "Predicted fit"), createText("strong", "", fit === null ? "Not provided" : fit), createText("span", "", fit === null ? "" : "/ 10 · model estimate"));
 
       article.append(number, body, score);
       const safeUrl = accountState.safeExternalUrl(recommendation.url);
@@ -505,13 +659,14 @@ function displayResults(data) {
         actions.appendChild(status);
         article.appendChild(actions);
       }
+      const compareControl = comparison?.addControl(index);
+      if (compareControl) article.appendChild(compareControl);
       list.appendChild(article);
     });
   }
 
   results.hidden = false;
   byId("recommend-again").hidden = !data.account_saved;
-  results.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
 }
 
 async function saveFeedback(
