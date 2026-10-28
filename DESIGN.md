@@ -1,3 +1,19 @@
+# Public Omakase design contract — October 28, 2026
+
+Current direction: the owner's accepted Plus family style adapted to a recommendation-only guest counter and invited Lite account. Midnight #090B12, surfaces #111620/#182031, iris #C4B5FD, bright readable text and self-hosted Geist. `public-theme.css` owns shared tokens and the unmodified licensed font; `GEIST-OFL.txt` and source provenance ship beside it. No owner artwork, profile, provider configuration or private media is copied.
+
+The public moonlit atelier stays the product-specific illustration. It is editorial art, with a clearly fictional optional study; actual recommendation results remain separate and show their real title, full reasoning, history pairing and predicted fit. Headlines use normal Geist weight600–650 with calm 10–24px contours. Body remains16px with generous line height. Labels/statuses use normal case and14–16px text; monospace is reserved for code. No text requires an entrance animation to become readable.
+
+The working counter retains Model, History and Taste, existing native inputs and controller IDs. Selected choices have explicit borders plus checked state. Controls target48px, visible keyboard focus, inline errors and preserved recovery. Phone layouts stack without horizontal scrolling. Results and two-pick comparison retain full long titles, independent fields, safe outbound links and ordinary focus behavior. Reduced motion disables nonessential movement.
+
+Guest keys and taste notes remain request-local; successful completion clears the key. Provider billing remains the visitor's responsibility. Invited Lite persistence, encrypted member keys, account history and member-owned AniList actions stay distinct. This presentation change adds no inference, acquisition, Plex or cross-edition account access.
+
+Verification and creative acceptance are separate. Current source and safe mocked browser receipts belong to the active release record; this file does not claim deployment or real provider qualification.
+
+## Superseded September/October counter contract (historical)
+
+The following prior contract records the accepted4f6 baseline and is retained for history. Its paper palette and serif typography are superseded by the contract above.
+
 # Omakase public counter design
 
 This record describes the isolated candidate based on a599d24f57057470d2edabd07b40bd9e1d0a8684. Source of truth: src/omakase/web/templates/index.html, static/style.css, static/app.js and static/menu_receipt.js. Qualification and publication state belongs in the coordinator's current review record.

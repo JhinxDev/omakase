@@ -7,6 +7,13 @@
     <h1>{{ user.display_name }}’s counter</h1>
     <p>Your recommendations and encrypted provider keys live with this account.</p>
     <a class="button-link" href="/">Cook a new menu</a>
+    <nav class="account-sections" aria-label="Account sections">
+      <a href="#anilist-title">AniList connection</a>
+      <a href="#provider-keys-title">Provider keys</a>
+      <a href="#taste-title">Taste note</a>
+      <a href="#saved-title">Saved titles</a>
+      <a href="#history-title">Menu history</a>
+    </nav>
     <form method="post" action="/account/logout">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <button class="text-button" type="submit">Sign out</button>
@@ -79,15 +86,15 @@
         <div><p class="eyebrow">Palate note</p><h2 id="taste-title">What should the chef remember?</h2></div>
         <span id="profile-status" aria-live="polite"></span>
       </div>
-      <textarea id="account-profile" rows="5" maxlength="10000" placeholder="I like patient mysteries, earned emotion, and ambitious science fiction.">{{ taste_profile }}</textarea>
+      <textarea aria-labelledby="taste-title" id="account-profile" rows="5" maxlength="10000" placeholder="I like patient mysteries, earned emotion, and ambitious science fiction.">{{ taste_profile }}</textarea>
       <button id="save-profile" type="button">Save taste note</button>
     </section>
     <section class="dashboard-section" aria-labelledby="saved-title">
-      <div class="section-heading"><div><p class="eyebrow">My list</p><h2 id="saved-title">Saved for later</h2></div><span>{{ saved|length }} picks</span></div>
+      <div class="section-heading"><div><p class="eyebrow">My list</p><h2 id="saved-title">Saved for later</h2></div><span>{{ saved|length }} pick{% if saved|length != 1 %}s{% endif %}</span></div>
       {% if saved %}
         <ol class="recommendation-list">
         {% for item in saved %}
-          <li><div><a href="{{ item.url or '#' }}">{{ item.title }}</a><p>{{ item.reasoning }}</p></div><strong>{{ item.predicted_score }}</strong></li>
+          <li><div><a href="{{ item.url or '#' }}">{{ item.title }}</a><p>{{ item.reasoning }}</p></div><strong class="model-estimate"><span class="model-estimate-label">Model estimate</span><span>{{ item.predicted_score }}<span class="model-estimate-scale"> /10</span></span></strong></li>
         {% endfor %}
         </ol>
       {% else %}<p class="empty-state">Nothing saved yet. Make a menu, then choose “Add to My List” on anything that catches your eye.</p>{% endif %}
@@ -97,7 +104,7 @@
       {% if watching %}
         <ol class="recommendation-list">
         {% for item in watching %}
-          <li data-tracker-sync-state="{{ item.tracker_sync_state }}"><div><a href="{{ item.url or '#' }}">{{ item.title }}</a><p>{{ item.reasoning }}</p><small>Watching · {{ item.watched_episodes }} episode{% if item.watched_episodes != 1 %}s{% endif %}</small>{% if item.tracker_sync_detail %}<small class="tracker-sync-detail">{{ item.tracker_sync_detail }}</small>{% endif %}</div><strong>{{ item.predicted_score }}</strong></li>
+          <li data-tracker-sync-state="{{ item.tracker_sync_state }}"><div><a href="{{ item.url or '#' }}">{{ item.title }}</a><p>{{ item.reasoning }}</p><small>Watching · {{ item.watched_episodes }} episode{% if item.watched_episodes != 1 %}s{% endif %}</small>{% if item.tracker_sync_detail %}<small class="tracker-sync-detail">{{ item.tracker_sync_detail }}</small>{% endif %}</div><strong class="model-estimate"><span class="model-estimate-label">Model estimate</span><span>{{ item.predicted_score }}<span class="model-estimate-scale"> /10</span></span></strong></li>
         {% endfor %}
         </ol>
       {% else %}<p class="empty-state">Titles you mark Watching will appear here with your episode progress.</p>{% endif %}
@@ -107,7 +114,7 @@
       {% if watched %}
         <ol class="recommendation-list">
         {% for item in watched %}
-          <li data-tracker-sync-state="{{ item.tracker_sync_state }}"><div><a href="{{ item.url or '#' }}">{{ item.title }}</a><p>{{ item.reasoning }}</p><small>Watched · {{ item.watched_score }}/10</small>{% if item.tracker_sync_detail %}<small class="tracker-sync-detail">{{ item.tracker_sync_detail }}</small>{% endif %}</div><strong>{{ item.predicted_score }}</strong></li>
+          <li data-tracker-sync-state="{{ item.tracker_sync_state }}"><div><a href="{{ item.url or '#' }}">{{ item.title }}</a><p>{{ item.reasoning }}</p><small>Watched · Your rating {{ item.watched_score }}/10</small>{% if item.tracker_sync_detail %}<small class="tracker-sync-detail">{{ item.tracker_sync_detail }}</small>{% endif %}</div><strong class="model-estimate"><span class="model-estimate-label">Model estimate</span><span>{{ item.predicted_score }}<span class="model-estimate-scale"> /10</span></span></strong></li>
         {% endfor %}
         </ol>
       {% else %}<p class="empty-state">Titles you mark already watched will appear here with your score.</p>{% endif %}
@@ -117,10 +124,10 @@
       {% if history %}
         {% for run in history %}
         <details class="history-run" {% if loop.first %}open{% endif %}>
-          <summary><span>{{ run.created_at }} · {{ run.provider }} / {{ run.mode }}</span><strong>{{ run.recommendations|length }} picks</strong></summary>
+          <summary><span>{{ run.created_at }} · {{ run.provider }} / {{ run.mode }}</span><strong>{{ run.recommendations|length }} pick{% if run.recommendations|length != 1 %}s{% endif %}</strong></summary>
           <ol class="recommendation-list">
           {% for item in run.recommendations %}
-            <li data-recommendation-id="{{ item.id }}" data-tracker-sync-state="{{ item.tracker_sync_state }}"><div><a href="{{ item.url or '#' }}">{{ item.title }}</a><p>{{ item.reasoning }}</p><small>{% if item.feedback_state == 'watched' and item.watch_status == 'current' %}watching · {{ item.watched_episodes }} episode{% if item.watched_episodes != 1 %}s{% endif %}{% else %}{{ item.feedback_state|replace('_', ' ') }}{% if item.feedback_state == 'watched' and item.watched_score %} · {{ item.watched_score }}/10{% endif %}{% endif %}</small>{% if item.feedback_state == 'watched' and item.tracker_sync_detail %}<small class="tracker-sync-detail">{{ item.tracker_sync_detail }}</small>{% endif %}</div><strong>{{ item.predicted_score }}</strong></li>
+            <li data-recommendation-id="{{ item.id }}" data-tracker-sync-state="{{ item.tracker_sync_state }}"><div><a href="{{ item.url or '#' }}">{{ item.title }}</a><p>{{ item.reasoning }}</p><small>{% if item.feedback_state == 'watched' and item.watch_status == 'current' %}watching · {{ item.watched_episodes }} episode{% if item.watched_episodes != 1 %}s{% endif %}{% else %}{{ item.feedback_state|replace('_', ' ') }}{% if item.feedback_state == 'watched' and item.watched_score %} · Your rating {{ item.watched_score }}/10{% endif %}{% endif %}</small>{% if item.feedback_state == 'watched' and item.tracker_sync_detail %}<small class="tracker-sync-detail">{{ item.tracker_sync_detail }}</small>{% endif %}</div><strong class="model-estimate"><span class="model-estimate-label">Model estimate</span><span>{{ item.predicted_score }}<span class="model-estimate-scale"> /10</span></span></strong></li>
           {% endfor %}
           </ol>
         </details>
