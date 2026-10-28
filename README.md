@@ -34,6 +34,7 @@ The counter has three explicit steps: choose a model provider, add watch history
 and shape the menu. You can return to an earlier step before requesting a menu.
 Guest requests use your chosen model and request-local credentials. Invited
 Lite accounts add saved history, personal feedback and optional AniList sync.
+
 The hosted site supports request-local keys for OpenAI, Anthropic, Gemini, DeepSeek, OpenRouter, and owner-approved OpenWebUI instances. Both Quick and Deep model presets run as background jobs, so a slower reasoning model can finish without holding one proxy request open. OpenWebUI asks for the instance URL and the exact model ID shown there. Choose the provider explicitly: several provider keys can share the same shape, so key text alone is not a safe provider signal.
 
 Guest menus remain request-local. The provider key, history, and taste notes are not written to disk, logs, cookies, or a database. Your history and notes are sent to the provider you select so it can generate the menu. That provider's own data policy still applies.

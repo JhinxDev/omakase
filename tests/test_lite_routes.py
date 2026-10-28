@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import hashlib
+import re
+from html import unescape
 from urllib.parse import parse_qs, urlsplit
 
 from cryptography.fernet import Fernet
@@ -863,7 +865,9 @@ def test_watched_feedback_route_requires_anilist_connection_and_lists_score(
     assert '<h2 id="watched-title">Watched &amp; rated</h2>' in dashboard.text
     assert "1 title" in dashboard.text
     assert "Pluto" in dashboard.text
-    assert "watched · 8/10" in dashboard.text
+    visible_text = " ".join(unescape(re.sub(r"<[^>]+>", " ", dashboard.text)).split())
+    assert re.search(r"Your rating\s+8\s*/\s*10", visible_text)
+    assert re.search(r"Model estimate\s+9\.1\s*/\s*10", visible_text)
     assert 'data-tracker-sync-state="connection_required"' in dashboard.text
     assert "Connect AniList to add this title and score to your anime list." in dashboard.text
 
