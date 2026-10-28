@@ -9,7 +9,7 @@
   </header>
   <div class="gate-form">
     <p class="eyebrow">One-time invitation</p>
-    <h2>Create your account.</h2>
+    <h2>Create your account</h2>
     {% if error %}<div class="form-error" role="alert">{{ error }}</div>{% endif %}
     <div id="invite-client-error" class="form-error" role="alert" hidden>This invitation link is missing its one-time code.</div>
     <form id="invite-form" method="post" action="/account/invite/claim">

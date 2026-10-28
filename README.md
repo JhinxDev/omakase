@@ -12,7 +12,7 @@ Omakase is an anime sommelier. It pairs your scored watch history with a short d
 
 ![A moonlit recommendation cabinet with framed landscapes, a tea cup, and a modern tablet](src/omakase/web/static/generated/omakase-atelier.webp)
 
-The public counter and its field guide share the moonlit workshop style of [jhinx.dev](https://jhinx.dev/projects/omakase). The separate [Omakase Plus preview and documentation](https://omakase-plus.jhinx.dev) explain the private library companion.
+The public counter and invited Lite accounts share a midnight, iris and Geist interface. For a self-hosted anime, movie and TV library, see [Omakase Plus](https://github.com/JhinxDev/omakase-plus) and its [setup guide](https://omakase-plus.jhinx.dev/docs/quickstart).
 
 ## What makes it different
 
@@ -32,9 +32,8 @@ The result is a short tasting menu instead of an endless popularity feed. Each r
 
 The counter has three explicit steps: choose a model provider, add watch history,
 and shape the menu. You can return to an earlier step before requesting a menu.
-The current interface release is on `codex/estate-review-20260930`; the hosted
-counter has been verified against that source. This README update does not
-change the provider, privacy or account contracts below.
+Guest requests use your chosen model and request-local credentials. Invited
+Lite accounts add saved history, personal feedback and optional AniList sync.
 
 The hosted site supports request-local keys for OpenAI, Anthropic, Gemini, DeepSeek, OpenRouter, and owner-approved OpenWebUI instances. Both Quick and Deep model presets run as background jobs, so a slower reasoning model can finish without holding one proxy request open. OpenWebUI asks for the instance URL and the exact model ID shown there. Choose the provider explicitly: several provider keys can share the same shape, so key text alone is not a safe provider signal.
 

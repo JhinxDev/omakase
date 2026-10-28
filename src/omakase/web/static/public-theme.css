@@ -1,0 +1,17 @@
+/* Shared Public Omakase / invited Lite theme. No private Plus data or artwork. */
+@font-face { font-family: Geist; src: url("/static/geist-variable.woff2") format("woff2"); font-style: normal; font-weight: 100 900; font-display: swap; }
+:root {
+  color-scheme: dark;
+  --public-bg: #090B12;
+  --public-surface: #111620;
+  --public-surface-raised: #182031;
+  --public-text: #F4F3FA;
+  --public-muted: #B6B8C9;
+  --public-accent: #C4B5FD;
+  --public-accent-ink: #171126;
+  --public-border: #303747;
+  --public-focus: #D9CEFF;
+  --public-error: #FFB2BB;
+  --public-success: #9AD8BA;
+  --public-font: Geist, "Segoe UI", system-ui, sans-serif;
+}
