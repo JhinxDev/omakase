@@ -10,6 +10,12 @@ Guest keys and taste notes remain request-local; successful completion clears th
 
 Verification and creative acceptance are separate. Current source and safe mocked browser receipts belong to the active release record; this file does not claim deployment or real provider qualification.
 
+## Guest preparation, October 29
+
+A fresh hosted guest starts with empty optional taste notes. The interface must never invent a personal profile or report notes added until that visitor supplies them. Existing invited members still receive their own saved notes; local owner-configured profiles retain their separate behavior.
+
+On phones, the native three-course preparation strip stays in one compact row. The first complete provider choice is visible at the Prepare my menu destination at320px and390px widths with an844px viewport. Model and History keep their current step and status; the scope/readiness footer appears on Taste. Supporting labels remain14px and the privacy disclosure has a44px target. Key and history privacy remains available through a native details control without dominating the initial task. Desktop composition and the midnight family palette remain intact.
+
 ## Superseded September/October counter contract (historical)
 
 The following prior contract records the accepted4f6 baseline and is retained for history. Its paper palette and serif typography are superseded by the contract above.

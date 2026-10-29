@@ -777,22 +777,13 @@ _DEFAULT_PROFILE_FALLBACK = """## Things I love
 ## Recent loves (do not recommend these, they are calibration)
 - [Title you scored highly]"""
 
-_PUBLIC_PROFILE_STARTER = """## What usually works for me
-- Thoughtful science fiction and fantasy
-- Character growth that takes its time
-
-## What I usually avoid
-- Stories that rely on shock without earning it
-
-## A few favorites
-- Add two or three titles and what stayed with you"""
-
 
 def _get_default_profile() -> str:
     if _is_hosted_public():
         # The public demo must never render a profile that happens to exist on
-        # the host machine or inside a reused deployment directory.
-        return _PUBLIC_PROFILE_STARTER
+        # the host machine or invent preferences for a new visitor. Invited
+        # members load their own saved notes through the authenticated session.
+        return ""
     candidates = [
         Path.cwd() / "taste-profile.md",
         Path.home() / ".omakase" / "profile.md",

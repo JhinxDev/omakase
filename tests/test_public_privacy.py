@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 import os
+import re
 
 from fastapi.testclient import TestClient
 
@@ -27,6 +28,30 @@ def _valid_payload() -> dict[str, object]:
         "profile": "I like thoughtful science fiction.",
         "mode": "fast",
     }
+
+
+def test_hosted_guest_starts_with_empty_taste_instead_of_sample_preferences(monkeypatch):
+    client = _client(monkeypatch)
+    response = client.get("/")
+    assert response.status_code == 200
+    field = re.search(r'<textarea\b[^>]*id="profile"[^>]*>(.*?)</textarea>', response.text, re.S)
+    assert field is not None and not field.group(1).strip()
+    assert server._get_default_profile() == ""
+
+
+def test_scores_only_guest_payload_does_not_inject_starter_taste(monkeypatch):
+    client = _client(monkeypatch)
+    captured = {}
+
+    def fake_run(cfg):
+        captured["config"] = cfg
+        return []
+
+    monkeypatch.setattr(server, "run_pipeline", fake_run)
+    payload = _valid_payload() | {"profile": "", "skip_profile": True}
+    response = client.post("/api/recommend", json=payload)
+    assert response.status_code == 200
+    assert captured["config"].taste_profile == ""
 
 
 def test_recommendation_keeps_key_and_profile_request_local(monkeypatch, tmp_path):
@@ -267,4 +292,5 @@ def test_hosted_home_never_prefills_a_server_profile(monkeypatch, tmp_path):
 
     assert response.status_code == 200
     assert "PRIVATE SERVER OWNER PROFILE MARKER" not in response.text
-    assert "Thoughtful science fiction and fantasy" in response.text
+    field = re.search(r'<textarea\b[^>]*id="profile"[^>]*>(.*?)</textarea>', response.text, re.S)
+    assert field is not None and not field.group(1).strip()
