@@ -113,16 +113,19 @@
             <p class="course-label">Tonight's counter</p>
             <h2 id="counter-title">Prepare your menu.</h2>
           </div>
-          <p class="order-panel__intro">Three short courses. Return to any step to adjust your choices.</p>
+          <p class="order-panel__intro">Choose a model, add history, then shape your picks.</p>
         </header>
 
-        <div class="privacy-receipt" aria-label="Privacy receipt">
+        <details class="privacy-receipt">
+          <summary>
           <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20">
             <path d="M12 3 5 6v5c0 4.7 2.8 8.3 7 10 4.2-1.7 7-5.3 7-10V6l-7-3Z"></path>
             <path d="m9 12 2 2 4-5"></path>
           </svg>
+          <span>Key and history privacy</span>
+          </summary>
           <p id="privacy-receipt-copy"><strong>Request-local by design.</strong> Your key and taste notes are used for this menu and never written to disk, logs, cookies, or a database.</p>
-        </div>
+        </details>
 
         <div class="error-banner" id="error-banner" role="alert" tabindex="-1" hidden>
           <p class="error-banner__label">Check this step</p>
@@ -159,7 +162,7 @@
             <div class="course__heading">
               <p class="course-label">First course</p>
               <h3 id="model-course-title">Choose your model provider.</h3>
-              <p>The provider charges your account directly. Omakase sends this request to your selected provider; it does not resell model access.</p>
+              <p>Your provider bills your account directly. Omakase does not resell model access.</p>
             </div>
 
             <fieldset class="choice-grid choice-grid--providers">
