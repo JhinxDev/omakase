@@ -1,8 +1,7 @@
 """Google Gemini client — uses generativelanguage.googleapis.com.
 
-Endpoint: POST {url}/v1beta/models/{model}:generateContent?key=API_KEY
-Reads API key from `api_key` arg, then OMAKASE_API_KEY, then GEMINI_API_KEY,
-then GOOGLE_API_KEY.
+Endpoint: POST {url}/v1beta/models/{model}:generateContent
+Passes the API key in the `x-goog-api-key` header (never in URL query params).
 """
 
 from __future__ import annotations
@@ -37,19 +36,21 @@ class GeminiLLM(BaseLLM):
             "contents": [{"parts": [{"text": prompt}]}],
             "generationConfig": {
                 "temperature": temperature,
-                "maxOutputTokens": 4096,
+                "maxOutputTokens": 8192,
             },
         }
         if supports_json:
             payload["generationConfig"]["responseMimeType"] = "application/json"
 
-        params = {"key": self.api_key} if self.api_key else {}
-        with httpx.Client(timeout=300) as client:
+        headers = {"Content-Type": "application/json"}
+        if self.api_key:
+            headers["x-goog-api-key"] = self.api_key
+
+        with httpx.Client(timeout=300, follow_redirects=False) as client:
             resp = client.post(
-                f"{self.url}/v1beta/models/{self.model}:generateContent",
+                f"{self.url.rstrip('/')}/v1beta/models/{self.model}:generateContent",
                 json=payload,
-                params=params,
-                headers={"Content-Type": "application/json"},
+                headers=headers,
             )
             resp.raise_for_status()
             data = resp.json()

@@ -32,8 +32,8 @@ class OllamaLLM(BaseLLM):
         }
         if supports_json:
             payload["format"] = "json"
-        with httpx.Client(timeout=300) as client:
-            resp = client.post(f"{self.url}/api/generate", json=payload)
+        with httpx.Client(timeout=300, follow_redirects=False) as client:
+            resp = client.post(f"{self.url.rstrip('/')}/api/generate", json=payload)
             resp.raise_for_status()
             data = resp.json()
             return data.get("response", "")

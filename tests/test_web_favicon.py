@@ -23,8 +23,8 @@ def test_favicon_ico_compat_route_serves_svg():
     assert "Omakase, a bowl beneath a star" in response.text
 
 
-def test_generated_counter_art_is_present():
-    art = Path(server.__file__).parent / "static" / "generated" / "omakase-counter-v2.png"
+def test_generated_atelier_art_is_present():
+    art = Path(server.__file__).parent / "static" / "generated" / "omakase-atelier.webp"
 
     assert art.is_file()
-    assert art.stat().st_size > 1_000_000
+    assert art.stat().st_size > 100_000

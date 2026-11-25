@@ -1,17 +1,17 @@
 /* Lite account surfaces share the public theme; account behavior stays in account.js. */
 :root {
   color-scheme: dark;
-  --ink: var(--public-bg, #090b12);
-  --surface: var(--public-surface, #111620);
-  --surface-raised: var(--public-surface-raised, #182031);
-  --paper: var(--public-text, #f4f3fa);
-  --paper-muted: var(--public-muted, #b6b8c9);
-  --paper-dim: var(--public-muted, #b6b8c9);
-  --brass: var(--public-accent, #c4b5fd);
-  --line: var(--public-border, #303747);
-  --focus: var(--public-focus, #d9ceff);
-  --error: var(--public-error, #ffb4b4);
-  --success: var(--public-success, #9edbb6);
+  --ink: var(--public-bg, #09090B);
+  --surface: var(--public-surface, #111216);
+  --surface-raised: var(--public-surface-raised, #181A20);
+  --paper: var(--public-text, #F4F4F5);
+  --paper-muted: var(--public-muted, #A1A1AA);
+  --paper-dim: var(--public-muted, #A1A1AA);
+  --brass: var(--public-accent, #A78BFA);
+  --line: var(--public-border, rgba(255, 255, 255, 0.12));
+  --focus: var(--public-focus, #C4B5FD);
+  --error: var(--public-error, #FDA4AF);
+  --success: var(--public-success, #6EE7B7);
   --body: var(--public-font, "Geist", system-ui, sans-serif);
 }
 * { box-sizing: border-box; }

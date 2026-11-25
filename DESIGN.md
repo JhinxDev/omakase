@@ -1,4 +1,10 @@
-# Public Omakase design contract — October 28, 2026
+# Public Omakase design contract (v1.0.0 — Carbon Obsidian + Iris Atelier)
+
+Updated November 25, 2026: unified guest counter, returned tasting menu cards, and invited Lite account surfaces onto the Carbon Obsidian + Iris Atelier system matching `jhinx.dev`. Canvas `#09090B`, bento surfaces `#111216` / `#181A20`, hairline borders `rgba(255, 255, 255, 0.09)` / `0.17`, iris violet accent `#A78BFA` (`#C4B5FD` focus), high-contrast text `#F4F4F5` / `#A1A1AA`, and self-hosted Geist font (`public-theme.css`). Single-pass `style.css`, `result_menu.css`, and `account.css` eliminate legacy paper/vermilion CSS override debt.
+
+Returned recommendation cards (`.recommendation`) preserve full titles, reasoning, history pairing, predicted fit, side-by-side compare, and safe outbound links while adding optional HTTPS cover art (`s4.anilist.co` / `cdn.myanimelist.net` allowlisted in both backend and CSP) and format/episode/studio/genre badges. Self-hosted Geist font loading is explicitly permitted via `font-src 'self'` in CSP.
+
+## Prior contract (October 28, 2026)
 
 Current direction: the owner's accepted Plus family style adapted to a recommendation-only guest counter and invited Lite account. Midnight #090B12, surfaces #111620/#182031, iris #C4B5FD, bright readable text and self-hosted Geist. `public-theme.css` owns shared tokens and the unmodified licensed font; `GEIST-OFL.txt` and source provenance ship beside it. No owner artwork, profile, provider configuration or private media is copied.
 

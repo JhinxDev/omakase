@@ -13,6 +13,8 @@ def test_public_responses_set_browser_security_headers(monkeypatch):
     assert response.headers["referrer-policy"] == "no-referrer"
     assert response.headers["strict-transport-security"].startswith("max-age=")
     assert "frame-ancestors 'none'" in response.headers["content-security-policy"]
+    assert "font-src 'self'" in response.headers["content-security-policy"]
+    assert "https://s4.anilist.co" in response.headers["content-security-policy"]
     assert "script-src 'self'" in response.headers["content-security-policy"]
 
 

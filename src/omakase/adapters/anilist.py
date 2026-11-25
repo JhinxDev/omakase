@@ -10,10 +10,10 @@ import json
 from urllib.request import Request, urlopen
 
 from omakase.adapters.base import SourceAdapter, register
-from omakase.types import MediaItem, SourceData
+from omakase.types import MediaItem, SourceData, safe_cover_url
 
 API_URL = "https://graphql.anilist.co"
-USER_AGENT = "Omakase/0.1 (homelab; +https://github.com/JhinxDev/omakase)"
+USER_AGENT = "Omakase/1.0 (+https://github.com/JhinxDev/omakase)"
 
 
 @register("anilist")
@@ -31,7 +31,7 @@ class AniListAdapter(SourceAdapter):
                 "User-Agent": USER_AGENT,
             },
         )
-        with urlopen(req) as resp:
+        with urlopen(req, timeout=30) as resp:
             return json.loads(resp.read().decode())
 
     def _fetch_history(self, username: str) -> list[MediaItem]:
@@ -113,6 +113,7 @@ class AniListAdapter(SourceAdapter):
               description(asHtml: false)
               format
               episodes
+              coverImage { large }
               studios(isMain: true) { nodes { name } }
             }
           }
@@ -146,6 +147,7 @@ class AniListAdapter(SourceAdapter):
                         studio=studio,
                         description=desc,
                         mean_score=m.get("meanScore"),
+                        cover_image=safe_cover_url(m.get("coverImage", {}).get("large")),
                     )
                 )
             page += 1
@@ -168,6 +170,7 @@ class AniListAdapter(SourceAdapter):
                   description(asHtml: false)
                   format
                   episodes
+                  coverImage { large }
                   studios(isMain: true) { nodes { name } }
                 }
               }
@@ -203,6 +206,7 @@ class AniListAdapter(SourceAdapter):
                         studio=studio,
                         description=desc,
                         mean_score=media.get("meanScore"),
+                        cover_image=safe_cover_url(media.get("coverImage", {}).get("large")),
                     )
                 )
         return items

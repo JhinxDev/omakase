@@ -9,7 +9,7 @@ from urllib.parse import quote_plus
 from omakase.adapters.base import get_adapter
 from omakase.llm import get_llm
 from omakase.prompt import build_prompt
-from omakase.types import MediaItem, OmakaseConfig, Recommendation, SourceData
+from omakase.types import MediaItem, OmakaseConfig, Recommendation, SourceData, safe_cover_url
 
 
 class EmptyHistoryError(Exception):
@@ -104,10 +104,14 @@ def _resolve_rec_urls(
     # Build a lookup keyed on normalized titles. Includes both english
     # and romaji titles to maximize hit rate — LLMs return either form.
     lookup: dict[str, MediaItem] = {}
+    normalized_lookup: dict[str, MediaItem] = {}
     for c in candidates:
         for t in (c.title_english, c.title_romaji):
             if t:
                 lookup.setdefault(t.strip().lower(), c)
+                norm = _normalized_title(t)
+                if norm:
+                    normalized_lookup.setdefault(norm, c)
 
     def permalink(item: MediaItem) -> str | None:
         if source_name == "anilist":
@@ -127,8 +131,19 @@ def _resolve_rec_urls(
     for r in recs:
         r.source = source_name
         match = lookup.get(r.title.strip().lower())
+        if match is None:
+            norm_title = _normalized_title(r.title)
+            if norm_title:
+                match = normalized_lookup.get(norm_title)
         link = permalink(match) if match else None
         r.url = link or search_url(r.title)
+        if match is not None:
+            r.cover_image = safe_cover_url(match.cover_image)
+            r.genres = list(match.genres[:4]) if match.genres else []
+            r.episodes = match.episodes
+            r.format = match.format
+            r.studio = match.studio
+            r.mean_score = match.mean_score
 
 
 def _load_taste_profile(path: str) -> str:

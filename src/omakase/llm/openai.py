@@ -57,6 +57,13 @@ class OpenAILLM(BaseLLM):
     def _chat_completions_url(self) -> str:
         return f"{self.url.rstrip('/')}/v1/chat/completions"
 
+    def _uses_max_completion_tokens(self) -> bool:
+        url = self.url.rstrip("/").lower()
+        model = self.model.lower()
+        if url != "https://api.openai.com":
+            return False
+        return model.startswith(("gpt-5", "o1", "o3", "o4"))
+
     def generate(
         self,
         prompt: str,
@@ -67,9 +74,12 @@ class OpenAILLM(BaseLLM):
         payload: dict = {
             "model": self.model,
             "messages": [{"role": "user", "content": prompt}],
-            "temperature": temperature,
-            "max_tokens": self._max_tokens(),
         }
+        if self._uses_max_completion_tokens():
+            payload["max_completion_tokens"] = self._max_tokens()
+        else:
+            payload["temperature"] = temperature
+            payload["max_tokens"] = self._max_tokens()
         if supports_json:
             payload["response_format"] = {"type": "json_object"}
 
