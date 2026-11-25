@@ -6,8 +6,8 @@ const PROVIDERS = {
   openai: {
     label: "OpenAI",
     url: "https://api.openai.com",
-    fast: "gpt-4o-mini",
-    pro: "gpt-4o",
+    fast: "gpt-5-mini",
+    pro: "gpt-5",
     hint: "Create or manage a key in your OpenAI account.",
   },
   anthropic: {
@@ -20,8 +20,8 @@ const PROVIDERS = {
   gemini: {
     label: "Gemini",
     url: "https://generativelanguage.googleapis.com",
-    fast: "gemini-2.5-flash",
-    pro: "gemini-2.5-pro",
+    fast: "gemini-3.8-flash",
+    pro: "gemini-4-hydrogen",
     hint: "Use a Gemini API key from Google AI Studio.",
   },
   deepseek: {
@@ -34,7 +34,7 @@ const PROVIDERS = {
   openrouter: {
     label: "OpenRouter",
     url: "https://openrouter.ai/api",
-    fast: "openai/gpt-4o-mini",
+    fast: "openai/gpt-5-mini",
     pro: "anthropic/claude-sonnet-4.6",
     hint: "Use an OpenRouter key with access to the selected model.",
   },
@@ -567,6 +567,54 @@ function createMenuComparison(recommendations) {
   };
 }
 
+const ALLOWED_COVER_HOSTS = new Set(["s4.anilist.co", "cdn.myanimelist.net"]);
+
+function safeCoverUrl(value) {
+  if (typeof value !== "string" || !value.trim()) return "";
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== "https:") return "";
+    if (!ALLOWED_COVER_HOSTS.has(parsed.hostname.toLowerCase())) return "";
+    return parsed.href;
+  } catch {
+    return "";
+  }
+}
+
+function buildMetaStrip(recommendation) {
+  const badges = [];
+  if (typeof recommendation.format === "string" && recommendation.format.trim()) {
+    badges.push({ text: recommendation.format.trim(), isGenre: false });
+  }
+  if (Number.isInteger(recommendation.episodes) && recommendation.episodes > 0) {
+    const unit = recommendation.episodes === 1 ? "ep" : "eps";
+    badges.push({ text: `${recommendation.episodes} ${unit}`, isGenre: false });
+  }
+  if (typeof recommendation.studio === "string" && recommendation.studio.trim()) {
+    badges.push({ text: recommendation.studio.trim(), isGenre: false });
+  }
+  if (Array.isArray(recommendation.genres)) {
+    recommendation.genres.slice(0, 3).forEach((genre) => {
+      if (typeof genre === "string" && genre.trim()) {
+        badges.push({ text: genre.trim(), isGenre: true });
+      }
+    });
+  }
+  if (!badges.length) return null;
+  const strip = document.createElement("div");
+  strip.className = "recommendation__meta";
+  badges.forEach(({ text, isGenre }) => {
+    strip.appendChild(
+      createText(
+        "span",
+        isGenre ? "recommendation__badge recommendation__badge--genre" : "recommendation__badge",
+        text,
+      ),
+    );
+  });
+  return strip;
+}
+
 function displayResults(data) {
   const results = byId("results");
   const list = byId("results-list");
@@ -581,15 +629,18 @@ function displayResults(data) {
   } else {
     data.recommendations.forEach((recommendation, index) => {
       const article = document.createElement("article");
-      article.className = "recommendation";
+      const coverUrl = safeCoverUrl(recommendation.cover_image);
+      article.className = coverUrl ? "recommendation recommendation--with-cover" : "recommendation";
       article.style.setProperty("--result-index", index);
 
       const number = createText("span", "recommendation__number", String(index + 1).padStart(2, "0"));
       number.setAttribute("aria-label", `Pick ${index + 1}`);
       const body = document.createElement("div");
       body.className = "recommendation__body";
+      body.appendChild(createText("h3", "recommendation__title", recommendation.title));
+      const metaStrip = buildMetaStrip(recommendation);
+      if (metaStrip) body.appendChild(metaStrip);
       body.append(
-        createText("h3", "recommendation__title", recommendation.title),
         createText("p", "result-menu-label", "Why this pick"),
         createText("p", "recommendation__reason", recommendationReason(recommendation)),
       );
@@ -603,7 +654,21 @@ function displayResults(data) {
       const fit = predictedFit(recommendation);
       score.append(createText("span", "result-menu-label", "Predicted fit"), createText("strong", "", fit === null ? "Not provided" : fit), createText("span", "", fit === null ? "" : "/ 10 · model estimate"));
 
-      article.append(number, body, score);
+      if (coverUrl) {
+        const cover = document.createElement("img");
+        cover.className = "recommendation__cover";
+        cover.src = coverUrl;
+        cover.alt = "";
+        cover.loading = "lazy";
+        cover.referrerPolicy = "no-referrer";
+        cover.addEventListener("error", () => {
+          cover.remove();
+          article.classList.remove("recommendation--with-cover");
+        });
+        article.append(number, cover, body, score);
+      } else {
+        article.append(number, body, score);
+      }
       const safeUrl = accountState.safeExternalUrl(recommendation.url);
       if (safeUrl) {
         const link = createText("a", "recommendation__link", "Open anime page ↗");

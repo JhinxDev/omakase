@@ -67,9 +67,12 @@ def _asset_version() -> str:
     """
     assets = (
         _HERE / "static" / "style.css",
+        _HERE / "static" / "result_menu.css",
+        _HERE / "static" / "public-theme.css",
+        _HERE / "static" / "account.css",
         _HERE / "static" / "app.js",
         _HERE / "static" / "account_state.js",
-        _HERE / "static" / "generated" / "omakase-counter-v2.png",
+        _HERE / "static" / "generated" / "omakase-atelier.webp",
     )
     try:
         return str(max(int(asset.stat().st_mtime) for asset in assets))
@@ -108,13 +111,13 @@ async def browser_security_headers(request: Request, call_next):
         "default-src 'self'; "
         "base-uri 'none'; "
         "connect-src 'self'; "
-        "font-src https://fonts.gstatic.com; "
+        "font-src 'self'; "
         "form-action 'self'; "
         "frame-ancestors 'none'; "
-        "img-src 'self' data:; "
+        "img-src 'self' data: https://s4.anilist.co https://cdn.myanimelist.net; "
         "object-src 'none'; "
         "script-src 'self'; "
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com"
+        "style-src 'self' 'unsafe-inline'"
     )
     if request.url.path.startswith(("/account", "/api/")):
         response.headers["Cache-Control"] = "no-store"
@@ -132,7 +135,7 @@ class RecommendRequest(BaseModel):
     api_key: str | None = ""  # LLM API key
     mal_client_id: str | None = ""  # MAL Client ID (source-specific)
     mal_export_b64: str | None = ""  # base64-encoded MAL XML export (alternative to Client ID)
-    model: str = "qwen2.5:7b"
+    model: str = "qwen3:8b"
     source: str = "anilist"
     username: str = ""
     profile: str = ""
@@ -150,6 +153,12 @@ class RecommendationOut(BaseModel):
     best_match_from_history: str
     url: str | None = None
     source: str | None = None
+    cover_image: str | None = None
+    genres: list[str] = []
+    episodes: int | None = None
+    format: str | None = None
+    studio: str | None = None
+    mean_score: float | None = None
 
 
 class RecommendResponse(BaseModel):
@@ -435,6 +444,12 @@ def _recommendations_out(recs) -> list[RecommendationOut]:
             best_match_from_history=rec.best_match_from_history,
             url=rec.url,
             source=rec.source,
+            cover_image=rec.cover_image,
+            genres=list(rec.genres or []),
+            episodes=rec.episodes,
+            format=rec.format,
+            studio=rec.studio,
+            mean_score=rec.mean_score,
         )
         for rec in recs
     ]

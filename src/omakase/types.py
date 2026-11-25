@@ -1,8 +1,29 @@
-"""Core data types and model presets for Omakase."""
+"""Core data types, model presets, and safe media URL helpers for Omakase."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from urllib.parse import urlsplit
+
+ALLOWED_COVER_HOSTS = frozenset({"s4.anilist.co", "cdn.myanimelist.net"})
+
+
+def safe_cover_url(url: str | None) -> str | None:
+    """Return an HTTPS cover image URL only if its host is an allowlisted anime CDN."""
+    if not url or not isinstance(url, str):
+        return None
+    cleaned = url.strip()
+    if not cleaned:
+        return None
+    try:
+        parsed = urlsplit(cleaned)
+    except ValueError:
+        return None
+    if parsed.scheme.lower() != "https" or not parsed.hostname:
+        return None
+    if parsed.hostname.lower() not in ALLOWED_COVER_HOSTS:
+        return None
+    return cleaned
 
 
 @dataclass
@@ -21,6 +42,7 @@ class MediaItem:
     studio: str | None = None
     description: str | None = None  # only for candidates
     mean_score: float | None = None  # global average score
+    cover_image: str | None = None
 
 
 @dataclass
@@ -33,6 +55,12 @@ class Recommendation:
     best_match_from_history: str
     url: str | None = None
     source: str | None = None
+    cover_image: str | None = None
+    genres: list[str] = field(default_factory=list)
+    episodes: int | None = None
+    format: str | None = None
+    studio: str | None = None
+    mean_score: float | None = None
 
 
 @dataclass
@@ -90,37 +118,37 @@ DEFAULT_URLS: dict[str, str] = {
 # parsing instead.
 MODEL_PRESETS: dict[str, dict[str, str]] = {
     # Local
-    "ollama-fast": {"model": "qwen2.5:7b", "supports_json": "true"},
-    "ollama-pro": {"model": "qwen2.5:14b", "supports_json": "true"},
-    "lmstudio-fast": {"model": "qwen2.5-7b-instruct", "supports_json": "true"},
-    "lmstudio-pro": {"model": "qwen2.5-14b-instruct", "supports_json": "true"},
+    "ollama-fast": {"model": "qwen3:8b", "supports_json": "true"},
+    "ollama-pro": {"model": "qwen3:14b", "supports_json": "true"},
+    "lmstudio-fast": {"model": "qwen3-8b", "supports_json": "true"},
+    "lmstudio-pro": {"model": "qwen3-14b", "supports_json": "true"},
     # OpenAI
-    "openai-fast": {"model": "gpt-4o-mini", "supports_json": "true"},
-    "openai-pro": {"model": "gpt-4o", "supports_json": "true"},
+    "openai-fast": {"model": "gpt-5-mini", "supports_json": "true"},
+    "openai-pro": {"model": "gpt-5", "supports_json": "true"},
     # OpenWebUI can front models with different structured-output support.
-    "openwebui-fast": {"model": "qwen2.5:7b", "supports_json": "false"},
-    "openwebui-pro": {"model": "qwen2.5:14b", "supports_json": "false"},
+    "openwebui-fast": {"model": "qwen3:8b", "supports_json": "false"},
+    "openwebui-pro": {"model": "qwen3:14b", "supports_json": "false"},
     # Anthropic
     "anthropic-fast": {"model": "claude-haiku-4-5", "supports_json": "false"},
     "anthropic-pro": {"model": "claude-sonnet-4-6", "supports_json": "false"},
     # Google
-    "gemini-fast": {"model": "gemini-2.5-flash", "supports_json": "true"},
-    "gemini-pro": {"model": "gemini-2.5-pro", "supports_json": "true"},
+    "gemini-fast": {"model": "gemini-3.8-flash", "supports_json": "true"},
+    "gemini-pro": {"model": "gemini-4-hydrogen", "supports_json": "true"},
     # DeepSeek
     "deepseek-fast": {"model": "deepseek-v4-flash", "supports_json": "true"},
     "deepseek-pro": {"model": "deepseek-v4-pro", "supports_json": "true"},
     # Aggregators (OpenAI-compatible)
-    "openrouter-fast": {"model": "openai/gpt-4o-mini", "supports_json": "true"},
+    "openrouter-fast": {"model": "openai/gpt-5-mini", "supports_json": "true"},
     "openrouter-pro": {"model": "anthropic/claude-sonnet-4.6", "supports_json": "false"},
     "groq-fast": {"model": "llama-3.3-70b-versatile", "supports_json": "true"},
-    "groq-pro": {"model": "deepseek-r1-distill-llama-70b", "supports_json": "false"},
+    "groq-pro": {"model": "qwen/qwen3-32b", "supports_json": "false"},
     "together-fast": {"model": "meta-llama/Llama-3.3-70B-Instruct-Turbo", "supports_json": "true"},
     "together-pro": {"model": "deepseek-ai/DeepSeek-R1", "supports_json": "false"},
 }
 
-# Models the CLI considers "default" — if the user passes one of these we treat
-# it as 'no model specified' and substitute the preset's model.
-DEFAULT_MODEL_SENTINELS = {"qwen2.5:7b", "qwen2.5:14b"}
+# Models the CLI/API treat as default sentinels and replace with the chosen
+# backend's Fast/Pro preset model.
+DEFAULT_MODEL_SENTINELS = {"qwen3:8b", "qwen3:14b", "qwen2.5:7b", "qwen2.5:14b"}
 
 
 def resolve_model_preset(

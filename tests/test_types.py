@@ -26,47 +26,55 @@ OLLAMA_DEFAULT = "http://localhost:11434"
     ],
 )
 def test_preset_supports_json(llm_type, mode, expected_supports_json):
-    _, _, _, supports_json = resolve_model_preset(OLLAMA_DEFAULT, llm_type, "qwen2.5:7b", mode)
+    _, _, _, supports_json = resolve_model_preset(OLLAMA_DEFAULT, llm_type, "qwen3:8b", mode)
     assert supports_json is expected_supports_json
 
 
 def test_resolver_substitutes_default_url_for_non_ollama_backend():
-    url, _, _, _ = resolve_model_preset(OLLAMA_DEFAULT, "anthropic", "qwen2.5:7b", "fast")
+    url, _, _, _ = resolve_model_preset(OLLAMA_DEFAULT, "anthropic", "qwen3:8b", "fast")
     assert url == DEFAULT_URLS["anthropic"]
 
 
 def test_resolver_keeps_custom_url():
     url, _, _, _ = resolve_model_preset(
-        "https://my-proxy.example.com", "openai", "qwen2.5:7b", "fast"
+        "https://my-proxy.example.com", "openai", "qwen3:8b", "fast"
     )
     assert url == "https://my-proxy.example.com"
 
 
 def test_resolver_substitutes_preset_model_when_default_passed():
-    _, _, model, _ = resolve_model_preset(OLLAMA_DEFAULT, "anthropic", "qwen2.5:7b", "fast")
+    _, _, model, _ = resolve_model_preset(OLLAMA_DEFAULT, "anthropic", "qwen3:8b", "fast")
     assert model == MODEL_PRESETS["anthropic-fast"]["model"]
 
 
 @pytest.mark.parametrize(
-    "mode,expected_model",
+    "backend,mode,expected_model",
     [
-        ("fast", "deepseek-v4-flash"),
-        ("pro", "deepseek-v4-pro"),
+        ("openai", "fast", "gpt-5-mini"),
+        ("openai", "pro", "gpt-5"),
+        ("gemini", "fast", "gemini-3.8-flash"),
+        ("gemini", "pro", "gemini-4-hydrogen"),
+        ("deepseek", "fast", "deepseek-v4-flash"),
+        ("deepseek", "pro", "deepseek-v4-pro"),
     ],
 )
-def test_resolver_uses_current_deepseek_models(mode, expected_model):
-    url, llm_type, model, supports_json = resolve_model_preset(
+def test_resolver_uses_current_cloud_models(backend, mode, expected_model):
+    url, llm_type, model, _ = resolve_model_preset(
         OLLAMA_DEFAULT,
-        "deepseek",
-        "qwen2.5:7b",
+        backend,
+        "qwen3:8b",
         mode,
     )
-    assert (url, llm_type, model, supports_json) == (
-        "https://api.deepseek.com",
-        "deepseek",
+    assert (url, llm_type, model) == (
+        DEFAULT_URLS[backend],
+        backend,
         expected_model,
-        True,
     )
+
+
+def test_resolver_accepts_legacy_default_sentinel():
+    _, _, model, _ = resolve_model_preset(OLLAMA_DEFAULT, "openai", "qwen2.5:7b", "fast")
+    assert model == "gpt-5-mini"
 
 
 def test_resolver_keeps_user_model_when_explicit():

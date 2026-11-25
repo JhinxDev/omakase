@@ -115,6 +115,39 @@ def test_resolve_urls_match_is_case_insensitive_and_uses_romaji_too():
     assert recs_ro[0].url == "https://anilist.co/anime/42/"
 
 
+def test_resolve_urls_enriches_allowlisted_cover_and_metadata():
+    candidates = [
+        MediaItem(
+            id=154587,
+            title_romaji="Sousou no Frieren",
+            title_english="Frieren: Beyond Journey's End",
+            genres=["Adventure", "Drama", "Fantasy"],
+            format="TV",
+            episodes=28,
+            studio="Madhouse",
+            mean_score=91,
+            cover_image="https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/154587.jpg",
+        ),
+        MediaItem(
+            id=999,
+            title_romaji="Untrusted Host Show",
+            title_english="Untrusted Host Show",
+            cover_image="https://evil.example.invalid/poster.jpg",
+        ),
+    ]
+    recs = [_rec("Frieren: Beyond Journey's End"), _rec("Untrusted Host Show")]
+    _resolve_rec_urls(recs, candidates, "anilist")
+    assert recs[0].cover_image == (
+        "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/154587.jpg"
+    )
+    assert recs[0].genres == ["Adventure", "Drama", "Fantasy"]
+    assert recs[0].episodes == 28
+    assert recs[0].format == "TV"
+    assert recs[0].studio == "Madhouse"
+    assert recs[0].mean_score == 91
+    assert recs[1].cover_image is None
+
+
 def test_exclude_feedback_candidates_matches_english_and_romaji_titles():
     candidates = [
         MediaItem(id=1, title_romaji="Pluto", title_english="PLUTO"),
