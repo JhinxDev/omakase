@@ -29,11 +29,6 @@ from omakase.adapters.base import list_sources
 from omakase.adapters.myanimelist import CandidateSourceError, MALExportError
 from omakase.engine import EmptyHistoryError, RecommendationOutputError
 from omakase.engine import run as run_pipeline
-from omakase.lite import credentials as lite_credentials
-from omakase.lite import db as lite_db
-from omakase.lite import routes as account_routes
-from omakase.lite.routes import api_router as account_api_router
-from omakase.lite.routes import page_router as account_page_router
 from omakase.llm import list_backends
 from omakase.types import DEFAULT_URLS, MODEL_PRESETS, OmakaseConfig, resolve_model_preset
 
@@ -42,6 +37,7 @@ from omakase.types import DEFAULT_URLS, MODEL_PRESETS, OmakaseConfig, resolve_mo
 _MAX_EXPORT_BYTES = 10 * 1024 * 1024
 _JOB_TTL_SECONDS = 60 * 60
 _MAX_ACTIVE_JOBS = 3
+_RATE_LIMIT_MAX_KEYS = 4096
 
 _HOSTED_PROVIDERS = {
     "openai": DEFAULT_URLS["openai"],
@@ -69,9 +65,8 @@ def _asset_version() -> str:
         _HERE / "static" / "style.css",
         _HERE / "static" / "result_menu.css",
         _HERE / "static" / "public-theme.css",
-        _HERE / "static" / "account.css",
         _HERE / "static" / "app.js",
-        _HERE / "static" / "account_state.js",
+        _HERE / "static" / "url_safety.js",
         _HERE / "static" / "generated" / "omakase-atelier.webp",
     )
     try:
@@ -85,8 +80,9 @@ _ASSET_VERSION = _asset_version()
 app = FastAPI(title="Omakase", version=__version__)
 
 app.mount("/static", StaticFiles(directory=str(_HERE / "static")), name="static")
-app.include_router(account_page_router)
-app.include_router(account_api_router)
+
+_rate_limit_lock = threading.Lock()
+_rate_limit_hits: dict[tuple[str, str], list[float]] = {}
 
 _job_lock = threading.Lock()
 _recommendation_jobs: dict[str, dict] = {}
@@ -94,6 +90,55 @@ _job_executor = concurrent.futures.ThreadPoolExecutor(
     max_workers=_MAX_ACTIVE_JOBS,
     thread_name_prefix="omakase-recommend",
 )
+
+
+def reset_rate_limits() -> None:
+    """Clear in-memory rate-limit counters (used by test fixtures)."""
+    with _rate_limit_lock:
+        _rate_limit_hits.clear()
+
+
+def _trust_proxy() -> bool:
+    return os.environ.get("OMAKASE_TRUST_PROXY", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+
+def _client_ip(request: Request) -> str:
+    if _trust_proxy():
+        forwarded = request.headers.get("x-forwarded-for", "")
+        first = forwarded.split(",", 1)[0].strip()
+        if first:
+            return first
+    return request.client.host if request.client else "unknown"
+
+
+def _enforce_rate_limit(
+    request: Request,
+    *,
+    action: str,
+    limit: int,
+    window_seconds: int,
+) -> None:
+    key = (action, _client_ip(request))
+    now = time.monotonic()
+    with _rate_limit_lock:
+        if len(_rate_limit_hits) > _RATE_LIMIT_MAX_KEYS:
+            cutoff = now - window_seconds
+            stale = [k for k, ts in _rate_limit_hits.items() if not any(t > cutoff for t in ts)]
+            for k in stale:
+                _rate_limit_hits.pop(k, None)
+        recent = [t for t in _rate_limit_hits.get(key, ()) if now - t < window_seconds]
+        if len(recent) >= limit:
+            raise HTTPException(
+                status_code=429,
+                detail="Too many recommendation requests from this address. Wait a bit and try again.",
+            )
+        recent.append(now)
+        _rate_limit_hits[key] = recent
 
 
 @app.middleware("http")
@@ -119,7 +164,7 @@ async def browser_security_headers(request: Request, call_next):
         "script-src 'self'; "
         "style-src 'self' 'unsafe-inline'"
     )
-    if request.url.path.startswith(("/account", "/api/")):
+    if request.url.path.startswith("/api/"):
         response.headers["Cache-Control"] = "no-store"
     if _is_hosted_public():
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
@@ -497,7 +542,6 @@ def _finish_job(
     *,
     status: str,
     recommendations: list[dict] | None = None,
-    account_saved: bool = False,
     detail: str | None = None,
     status_code: int | None = None,
 ) -> None:
@@ -512,7 +556,6 @@ def _finish_job(
         job["status"] = status
         job["updated_at"] = time.monotonic()
         job["recommendations"] = recommendations or []
-        job["account_saved"] = account_saved
         job["detail"] = detail
         job["status_code"] = status_code
 
@@ -522,8 +565,6 @@ def _run_recommendation_job(
     *,
     req: RecommendRequest,
     cfg: OmakaseConfig,
-    user_id: int | None,
-    used_saved_key: bool,
 ) -> None:
     try:
         with _job_lock:
@@ -538,55 +579,17 @@ def _run_recommendation_job(
             if job is None or job.get("cancel_requested"):
                 return
 
-        account_saved = False
-        if user_id is not None:
-            conn = lite_db.connect()
-            try:
-                _, serialized = lite_db.save_recommendation_run(
-                    conn,
-                    user_id=user_id,
-                    source=cfg.source,
-                    source_username=cfg.username,
-                    provider=cfg.llm_type,
-                    model=cfg.model,
-                    mode=cfg.mode,
-                    recommendations=recs,
-                )
-                lite_db.update_remembered_setup(
-                    conn,
-                    user_id=user_id,
-                    provider=cfg.llm_type,
-                    mode=cfg.mode,
-                    source=cfg.source,
-                    source_username=cfg.username,
-                    use_planning=cfg.use_planning,
-                    skip_profile=req.skip_profile,
-                    llm_url=cfg.llm_url if cfg.llm_type == "openwebui" else "",
-                    model=cfg.model if cfg.llm_type == "openwebui" else "",
-                )
-                account_saved = True
-            finally:
-                conn.close()
-        else:
-            serialized = [item.model_dump() for item in _recommendations_out(recs)]
+        serialized = [item.model_dump() for item in _recommendations_out(recs)]
         _finish_job(
             job_id,
             status="done",
             recommendations=serialized,
-            account_saved=account_saved,
         )
     except HTTPException as exc:
-        detail = str(exc.detail)
-        if used_saved_key and "rejected your API key" in detail:
-            provider = lite_credentials.PROVIDER_LABELS.get(
-                req.llm_type,
-                req.llm_type.title(),
-            )
-            detail = f"{provider} rejected your saved key. Replace it in My Counter and try again."
         _finish_job(
             job_id,
             status="error",
-            detail=detail,
+            detail=str(exc.detail),
             status_code=exc.status_code,
         )
     finally:
@@ -598,68 +601,13 @@ def _run_recommendation_job(
 
 @app.post("/api/recommend/jobs", status_code=202)
 def start_recommendation_job(req: RecommendRequest, request: Request):
-    account_routes.enforce_rate_limit(
+    _enforce_rate_limit(
         request,
         action="recommend-job",
         limit=10,
         window_seconds=60 * 60,
     )
-    user = account_routes.request_user(request, require_csrf=True)
-    effective_req = req
-    used_saved_key = False
-    if user is not None:
-        conn = lite_db.connect()
-        try:
-            submitted_key = (req.api_key or "").strip()
-            try:
-                if submitted_key:
-                    lite_credentials.save_provider_key(
-                        conn,
-                        user_id=user.id,
-                        provider=req.llm_type,
-                        plaintext_key=submitted_key,
-                    )
-                    resolved_key = submitted_key
-                else:
-                    used_saved_key = True
-                    resolved_key = lite_credentials.load_provider_key(
-                        conn,
-                        user_id=user.id,
-                        provider=req.llm_type,
-                    )
-            except lite_credentials.KeyringUnavailable as exc:
-                raise HTTPException(status_code=503, detail=str(exc)) from exc
-            except lite_credentials.SavedCredentialInvalid as exc:
-                raise HTTPException(status_code=400, detail=str(exc)) from exc
-            except lite_credentials.CredentialError as exc:
-                raise HTTPException(status_code=400, detail=str(exc)) from exc
-            if not resolved_key:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Paste a key or save one for the selected provider.",
-                )
-            stored_profile = lite_db.get_profile(conn, user.id)
-            updates = {"api_key": resolved_key}
-            if not req.profile.strip() and not req.skip_profile and stored_profile:
-                updates["profile"] = stored_profile
-            effective_req = req.model_copy(update=updates)
-        finally:
-            conn.close()
-
-    cfg = _prepare_config(effective_req, allow_deepseek_pro=True)
-    if user is not None:
-        conn = lite_db.connect()
-        try:
-            if req.profile.strip() and not req.skip_profile:
-                lite_db.update_profile(conn, user.id, req.profile)
-            feedback = lite_db.feedback_context(conn, user.id)
-            cfg.excluded_titles = tuple(lite_db.feedback_titles(conn, user.id))
-            if feedback:
-                cfg.taste_profile = "\n\n".join(
-                    part for part in (cfg.taste_profile or "", feedback) if part
-                )
-        finally:
-            conn.close()
+    cfg = _prepare_config(req, allow_deepseek_pro=True)
 
     now = time.monotonic()
     with _job_lock:
@@ -680,7 +628,6 @@ def start_recommendation_job(req: RecommendRequest, request: Request):
             "source": req.source,
             "username": req.username,
             "recommendations": [],
-            "account_saved": False,
             "detail": None,
             "status_code": None,
             "cancel_requested": False,
@@ -688,10 +635,8 @@ def start_recommendation_job(req: RecommendRequest, request: Request):
     _job_executor.submit(
         _run_recommendation_job,
         job_id,
-        req=effective_req,
+        req=req,
         cfg=cfg,
-        user_id=user.id if user else None,
-        used_saved_key=used_saved_key,
     )
     return {"job_id": job_id, "status": "queued"}
 
@@ -708,7 +653,6 @@ def recommendation_job(job_id: str):
             "source": job["source"],
             "username": job["username"],
             "recommendations": job["recommendations"],
-            "account_saved": job["account_saved"],
             "detail": job["detail"],
             "status_code": job["status_code"],
         }
@@ -795,9 +739,8 @@ _DEFAULT_PROFILE_FALLBACK = """## Things I love
 
 def _get_default_profile() -> str:
     if _is_hosted_public():
-        # The public demo must never render a profile that happens to exist on
-        # the host machine or invent preferences for a new visitor. Invited
-        # members load their own saved notes through the authenticated session.
+        # The public counter must never render a profile that happens to exist
+        # on the host machine or invent preferences for a new visitor.
         return ""
     candidates = [
         Path.cwd() / "taste-profile.md",

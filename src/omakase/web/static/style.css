@@ -97,9 +97,7 @@ a { color: inherit; }
 .back-nav > a:first-child { color: var(--paper-muted); }
 .back-nav a:hover { color: var(--brass-soft); }
 .product-brand { font-size: 1.3rem; font-weight: 650; letter-spacing: -0.04em; }
-.guide-nav { margin-left: 1rem; color: var(--paper-muted); }
-.account-entry { display: flex; gap: 1rem; margin-left: auto; }
-.account-entry a { color: var(--paper-muted); }
+.guide-nav { margin-left: auto; color: var(--paper-muted); }
 
 /* Hero / Welcome */
 .welcome {
@@ -547,7 +545,6 @@ fieldset > legend,
   line-height: 1.6;
 }
 .field__meta { display: flex; justify-content: space-between; }
-.key-status { min-height: 1.2em; margin: 0.35rem 0 0; color: var(--success); font-size: 0.875rem; line-height: 1.6; }
 
 .secret-field {
   display: grid;
@@ -814,73 +811,6 @@ fieldset > legend,
   color: var(--paper-muted);
 }
 
-/* Dialogs */
-.score-dialog {
-  width: min(560px, calc(100% - 2rem));
-  border: 1px solid var(--line-strong);
-  border-radius: 18px;
-  padding: clamp(1.4rem, 5vw, 2.5rem);
-  background: var(--surface-raised);
-  color: var(--paper);
-  box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.55);
-}
-.score-dialog::backdrop { background: rgba(9, 9, 11, 0.72); }
-.score-dialog h2 {
-  margin: 0.5rem 0 0.8rem;
-  font-family: var(--display);
-  font-size: clamp(1.8rem, 5vw, 2.75rem);
-  font-weight: 600;
-  letter-spacing: -0.04em;
-  line-height: 1.05;
-}
-.score-dialog > form > p:not(.course-label) { color: var(--paper-muted); }
-.score-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 1px;
-  margin: 1.5rem 0;
-  border: 1px solid var(--line-strong);
-  border-radius: 12px;
-  overflow: hidden;
-  background: var(--line);
-}
-.score-grid legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-.score-grid label { position: relative; cursor: pointer; }
-.score-grid input { position: absolute; opacity: 0; pointer-events: none; }
-.score-grid span {
-  display: grid;
-  min-height: 52px;
-  place-items: center;
-  background: var(--surface);
-  color: var(--paper-muted);
-}
-.score-grid input:checked + span {
-  background: var(--public-accent-soft);
-  box-shadow: inset 0 -2px var(--brass);
-  color: var(--brass-soft);
-}
-.score-grid input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: -3px; }
-.episode-progress-field {
-  display: grid;
-  gap: 0.5rem;
-  margin: 1.5rem 0;
-  color: var(--paper-muted);
-  font-size: 0.875rem;
-}
-.episode-progress-field input {
-  width: 100%;
-  min-height: 52px;
-  border: 1px solid var(--line-strong);
-  border-radius: 12px;
-  padding: 0.75rem 0.85rem;
-  outline: 0;
-  background: var(--ink);
-  color: var(--paper);
-}
-.episode-progress-field input:focus { border-color: var(--focus); box-shadow: 0 0 0 1px var(--focus); }
-.dialog-actions { display: flex; justify-content: flex-end; gap: 0.8rem; }
-.dialog-error { margin: 0 0 1rem !important; color: var(--error) !important; }
-
 /* Field Guide & Footer */
 .field-guide {
   display: grid;
@@ -976,7 +906,6 @@ fieldset > legend,
   .back-nav > span[aria-hidden] { display: none; }
   .product-brand { font-size: 1.2rem; }
   .product-brand img { width: 28px; height: 28px; }
-  .account-entry { gap: 0.5rem; }
   .welcome { padding: 2rem 1rem; gap: 2rem; }
   .welcome h1 { font-size: clamp(2.35rem, 10vw, 3.4rem); }
   .welcome .hero-copy { font-size: 1rem; }
@@ -1018,7 +947,6 @@ fieldset > legend,
   .course__actions .button { max-width: 100%; }
   .button--cook { min-width: 0; }
   .loading { grid-template-columns: 1fr; }
-  .dialog-actions { flex-wrap: wrap; }
   .field-guide { padding-inline: 1.25rem; }
   .footer { display: grid; padding-inline: 1rem; }
   .menu-study__picks dl { grid-template-columns: minmax(0, 1fr); }
