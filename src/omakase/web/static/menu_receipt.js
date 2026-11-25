@@ -20,11 +20,9 @@
 
     function update() {
       const provider = selected("provider");
-      // Read only the controller's fixed saved-key sentence, never its hint suffix.
-      const savedKey = field("key-status").textContent.includes("key saved to your account.");
       const keyPresent = present("api_key");
-      let modelMissing = !(keyPresent || savedKey);
-      let modelStatus = keyPresent ? "key entered" : savedKey ? "saved key available" : "add a key";
+      let modelMissing = !keyPresent;
+      let modelStatus = keyPresent ? "key entered" : "add a key";
       if (provider === "openwebui") {
         let httpsUrl = false;
         try {
@@ -64,12 +62,10 @@
 
     form.addEventListener("input", update);
     form.addEventListener("change", update);
-    // These native UI changes include async export reads and invited-account setup.
+    // Watch async MAL export selection and word-count updates.
     const observer = new MutationObserver(update);
     observer.observe(field("upload-clear"), { attributes: true, attributeFilter: ["hidden"] });
-    observer.observe(field("key-status"), { childList: true, characterData: true, subtree: true });
     observer.observe(field("profile-count"), { childList: true, characterData: true, subtree: true });
-    observer.observe(field("privacy-receipt-copy"), { childList: true, subtree: true });
     update();
   });
 })();

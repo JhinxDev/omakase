@@ -203,15 +203,6 @@
   text-underline-offset: 0.22em;
 }
 
-#results .recommendation__actions {
-  grid-column: 2 / -1;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  margin: 0;
-}
-
-#results .recommendation__feedback,
 #results .result-menu-button {
   min-height: 48px;
   max-width: 100%;
@@ -227,8 +218,6 @@
   cursor: pointer;
 }
 
-#results .recommendation__feedback:hover,
-#results .recommendation__feedback[aria-pressed="true"],
 #results .result-menu-button:hover,
 #results .result-menu-button[aria-pressed="true"] {
   color: var(--public-focus);
@@ -242,14 +231,6 @@
   border-color: var(--public-border);
   cursor: not-allowed;
   opacity: 0.65;
-}
-
-#results .recommendation__feedback-status {
-  flex-basis: 100%;
-  min-height: 1.2em;
-  margin: 0.2rem 0 0;
-  color: var(--public-success);
-  font-size: 0.875rem;
 }
 
 #results .recommendation__compare {
@@ -366,7 +347,6 @@
   #results .recommendation__score { grid-column: 2; grid-row: auto; border: 0; padding: 0; }
   #results .recommendation__score strong { font-size: 2rem; }
   #results .recommendation__link,
-  #results .recommendation__actions,
   #results .recommendation__compare { grid-column: 2; }
   #results .result-menu-comparison__list { grid-template-columns: minmax(0, 1fr); }
   #results .result-menu-comparison__pick + .result-menu-comparison__pick {

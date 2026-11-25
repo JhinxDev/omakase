@@ -30,12 +30,12 @@ LLM_TYPES = [
 @click.group()
 @click.version_option(version=__version__)
 def cli():
-    """Omakase — an LLM-powered sommelier for anime.
+    """Omakase: an LLM-powered sommelier for anime.
 
     \b
     Connect AniList or MyAnimeList, point it at any LLM (local or cloud),
     and get a hand-picked tasting menu of anime based on what you actually
-    love — not what's popular.
+    love, not just what's popular.
     """
 
 
@@ -101,7 +101,7 @@ def recommend(
     mode,
     use_planning,
 ):
-    """Serve your anime tasting menu — 5–10 personalized picks."""
+    """Serve your anime tasting menu: 5 to 10 personalized picks."""
     llm_url, llm_type, model, supports_json = resolve_model_preset(llm_url, llm_type, model, mode)
 
     cfg = OmakaseConfig(
@@ -162,38 +162,6 @@ def backends():
         click.echo(f"  - {b}")
 
 
-@cli.command("account-bootstrap")
-@click.option("--email", required=True, help="Owner email address")
-@click.option("--display-name", default="Owner", show_default=True)
-@click.option(
-    "--password-hash-stdin",
-    is_flag=True,
-    required=True,
-    help="Read an existing Argon2id password hash from standard input",
-)
-def account_bootstrap(email, display_name, password_hash_stdin):
-    """Create or update the Omakase Lite owner without handling plaintext."""
-    from omakase.lite import db
-
-    password_hash = click.get_text_stream("stdin").readline().strip()
-    if not password_hash.startswith("$argon2id$"):
-        raise click.ClickException("Standard input must contain one Argon2id password hash.")
-    conn = db.connect()
-    try:
-        try:
-            user_id = db.bootstrap_admin(
-                conn,
-                email=email,
-                password_hash=password_hash,
-                display_name=display_name,
-            )
-        except ValueError as exc:
-            raise click.ClickException(str(exc)) from exc
-    finally:
-        conn.close()
-    click.echo(f"Omakase Lite owner is ready (account {user_id}).")
-
-
 @cli.command()
 @click.argument("path", type=click.Path(), default="taste-profile.md")
 def init(path):
@@ -203,16 +171,16 @@ def init(path):
 ## Things I love
 - Morally complex protagonists, not pure-hearted heroes
 - Dense world-building over slice-of-life
-- Stories that earn their ending — strong third act
+- Stories that earn their ending: strong third act
 - [Add more...]
 
 ## Things I bounce off
 - [Add what you dislike...]
 
 ## Characters that resonate
-- [Character] — [why they resonate]
+- [Character]: [why they resonate]
 
-## Recent loves (don't recommend these — just calibration)
+## Recent loves (don't recommend these, just calibration)
 - [Title you scored highly]
 """
     dest = Path(path)
