@@ -14,7 +14,7 @@ def _load_public_app(monkeypatch):
     return server.app
 
 
-def test_public_mode_promotes_byok_and_keeps_plus_private(monkeypatch):
+def test_public_mode_promotes_byok_and_has_no_accounts(monkeypatch):
     monkeypatch.setenv("OMAKASE_PUBLIC_HOSTED", "true")
     app = _load_public_app(monkeypatch)
     client = TestClient(app)
@@ -24,10 +24,14 @@ def test_public_mode_promotes_byok_and_keeps_plus_private(monkeypatch):
     assert response.status_code == 200
     assert "Cook my recommendation menu" in response.text
     assert "never written to disk, logs, cookies, or a database" in response.text
-    assert "Lite accounts are invitation-only" in response.text
-    assert "/account/request" not in response.text
+    assert "No account, no saved keys, no database." in response.text
     assert "Private Plus automation is not connected to this demo." in response.text
-    assert "waitlist" not in response.text.lower()
+    assert "Lite accounts" not in response.text
+    assert "/account" not in response.text
+    assert "Sign in" not in response.text
+    assert "watching-dialog" not in response.text
+    assert "watched-dialog" not in response.text
+    assert "recommend-again" not in response.text
     assert "Ollama" not in response.text
     assert "LM Studio" not in response.text
     assert "DeepSeek" in response.text
@@ -35,30 +39,32 @@ def test_public_mode_promotes_byok_and_keeps_plus_private(monkeypatch):
     assert 'id="openwebui_url"' in response.text
     assert 'id="openwebui_model"' in response.text
     assert "—" not in response.text
-    assert "/static/account_state.js?v=" in response.text
+    assert "/static/url_safety.js?v=" in response.text
     assert 'name="provider_credential"' in response.text
     assert 'class="masked-credential"' in response.text
     assert 'name="provider_credential"\n                    type="password"' not in response.text
-    assert 'name="watched-score" value="10"' in response.text
-    assert 'id="watching-dialog"' in response.text
-    assert 'name="watched-episodes"' in response.text
-    assert 'min="1"' in response.text
-    assert 'step="1"' in response.text
-    assert "{% for" not in response.text
 
 
-def test_public_mode_does_not_mount_plus_routes(monkeypatch):
+def test_public_mode_does_not_mount_account_or_plus_routes(monkeypatch):
     app = _load_public_app(monkeypatch)
     client = TestClient(app)
 
-    for path in ("/plus", "/plus/login", "/plus/dashboard"):
+    for path in (
+        "/plus",
+        "/plus/login",
+        "/plus/dashboard",
+        "/account",
+        "/account/login",
+        "/api/account/session",
+    ):
         response = client.get(path, follow_redirects=False)
         assert response.status_code == 404
 
 
-def test_production_overlay_mounts_only_the_lite_keyring_secret():
-    overlay = Path("compose.production.yaml").read_text(encoding="utf-8")
+def test_compose_stack_mounts_no_keyring_or_account_database():
+    compose = Path("compose.yaml").read_text(encoding="utf-8")
 
-    assert "lite_keyring" in overlay
-    assert "access_discord" not in overlay
-    assert "webhook" not in overlay.lower()
+    assert "lite_keyring" not in compose
+    assert "omakase_lite_data" not in compose
+    assert "access_discord" not in compose
+    assert "webhook" not in compose.lower()

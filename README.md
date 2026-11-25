@@ -2,7 +2,7 @@
 
 > お任せ means "I'll leave it to the chef."
 
-Omakase is an anime sommelier. It pairs your scored watch history with a short description of your taste, then asks a model you choose to prepare a small recommendation menu with a reason for every pick.
+Omakase is a stateless, Bring-Your-Own-Key (BYOK) anime sommelier. It pairs your scored watch history with a short description of your taste, then asks a model you choose to prepare a focused tasting menu with a reason for every pick.
 
 [Try the public counter](https://omakase.jhinx.dev) · [Read the case study](https://jhinx.dev/projects/omakase) · [Visit jhinx.dev](https://jhinx.dev)
 
@@ -12,7 +12,7 @@ Omakase is an anime sommelier. It pairs your scored watch history with a short d
 
 ![Omakase Carbon Obsidian counter](docs/images/omakase-counter-v1.webp)
 
-The public counter and invited Lite accounts share a Carbon Obsidian (`#09090B`) and Iris Atelier (`#A78BFA`) interface with self-hosted Geist typography. For a self-hosted anime, movie and TV library, see [Omakase Plus](https://github.com/JhinxDev/omakase-plus) and its [setup guide](https://omakase-plus.jhinx.dev/docs/quickstart).
+The web counter uses a Carbon Obsidian (`#09090B`) and Iris Atelier (`#A78BFA`) interface with self-hosted Geist typography. There are no user accounts, no database, and no stored provider keys: every web menu runs purely on the key and history you bring for that request. For a self-hosted anime, movie, and TV library, see [Omakase Plus](https://github.com/JhinxDev/omakase-plus) and its [setup guide](https://omakase-plus.jhinx.dev/docs/quickstart).
 
 ![Omakase recommendation menu cards with cover art and metadata chips](docs/images/omakase-results-v1.webp)
 
@@ -32,65 +32,19 @@ The result is a short tasting menu instead of an endless popularity feed. Each r
 
 ## Public counter
 
-The counter has three explicit steps: choose a model provider, add watch history,
-and shape the menu. You can return to an earlier step before requesting a menu.
-Guest requests use your chosen model and request-local credentials. Invited
-Lite accounts add saved history, personal feedback and optional AniList sync.
+The counter has three explicit steps: choose a model provider, add watch history, and shape the menu. You can return to an earlier step before requesting a menu.
 
-The hosted site supports request-local keys for OpenAI, Anthropic, Gemini, DeepSeek, OpenRouter, and owner-approved OpenWebUI instances. Both Quick and Deep model presets run as background jobs, so a slower reasoning model can finish without holding one proxy request open. OpenWebUI asks for the instance URL and the exact model ID shown there. Choose the provider explicitly: several provider keys can share the same shape, so key text alone is not a safe provider signal.
+The hosted site supports request-local keys for OpenAI, Anthropic, Gemini, DeepSeek, OpenRouter, and owner-approved OpenWebUI instances. Both Quick and Deep model presets run as background jobs, so a slower reasoning model can finish without holding one proxy request open. OpenWebUI asks for the instance URL and the exact model ID shown there. Choose the provider explicitly: several provider keys share similar prefixes, so Omakase routes exclusively to the provider you select.
 
-Guest menus remain request-local. The provider key, history, and taste notes are not written to disk, logs, cookies, or a database. Your history and notes are sent to the provider you select so it can generate the menu. That provider's own data policy still applies.
+Everything stays request-local. Your provider key, history, and taste notes are never written to disk, logs, cookies, or a database, and the key input is cleared as soon as the menu arrives. Your history and notes are sent only to the provider you select so it can generate the menu (that provider's own data policy applies).
 
-The hosted counter accepts a public AniList username or a MyAnimeList XML export. Local model addresses are intentionally unavailable there because a public server cannot safely or honestly connect to a model running on your computer. A hosted OpenWebUI URL must use HTTPS and match an origin the Omakase owner explicitly allowlisted.
+The hosted counter accepts a public AniList username or a MyAnimeList XML export. Local model addresses (such as localhost Ollama or LM Studio) are intentionally disabled on the hosted instance because a public server cannot safely reach models running on your machine.
 
-### Omakase Lite accounts
-
-Lite accounts are invitation-only. The owner creates a one-time, seven-day link from the private Invitations page and shares it directly with a friend; the recipient supplies their own name, email, and password while claiming it. There is no public access-request form or queue. Every successful claim appears in the owner-only invitation ledger with the member's name, email, acceptance time, and a stable public number that is separate from internal database IDs. A Lite account adds:
-
-- saved recommendation history and a local My List;
-- encrypted, reusable provider keys that are never shown back to the browser;
-- Not Interested, Add to My List, Watching with episode progress, and scored
-  Already Watched feedback, with optional verified write-through to the member's
-  own connected AniList account;
-- a saved taste note, remembered setup, and feedback-aware menus that avoid repeats;
-- one-click regeneration from the current result page;
-- no Plex, download, acquisition, or private Plus access.
-
-Lite saves recommendation history, episode progress, completed scores, the
-account profile, setup choices, and feedback in its own SQLite database.
-Provider keys are encrypted at rest with a protected server-side Fernet keyring,
-decrypted only for the selected provider request, and cleared from job memory
-when the request finishes. Uploaded MAL files remain request-local. Passwords
-use Argon2id, sessions and invitations are stored only as hashes, mutating
-account requests require authentication, owner authorization where applicable,
-same-origin and CSRF validation, and account/API responses are not
-browser-cached.
-
-AniList synchronization is opt-in per Lite member. Register the exact
-`https://your-host/account/integrations/anilist/callback` URL with AniList, set
-`OMAKASE_ANILIST_CLIENT_ID`, and mount the client secret at the
-`OMAKASE_ANILIST_CLIENT_SECRET_FILE` path. Access tokens are bound to the AniList
-identity the member approved and encrypted with the Lite keyring. Omakase writes
-only when the connected username matches the username used to build that menu,
-then stores AniList's returned list-entry receipt. Watching sends AniList
-`CURRENT` plus a positive episode count; Already Watched sends `COMPLETED` plus
-the member's 1–10 score. Local feedback remains saved if AniList is unavailable
-or rejects the update and is retried after a compatible connection.
-
-For Docker Compose, include `compose.anilist.yaml` alongside `compose.yaml` and
-`compose.production.yaml` after creating `secrets/anilist-client-secret`. The
-separate overlay keeps deployments that do not use AniList synchronization from
-requiring an empty secret file. On a root-managed Linux host, give that secret
-the same owner, group, and non-world-readable mode as the existing Lite keyring
-so the unprivileged container process can read it.
-
-Set `OMAKASE_SOURCE_COMMIT` to the exact 40-character Git commit for every
-build and deploy. The image label and `/api/health` expose that value so the
-running public artifact can be checked against its source.
+Set `OMAKASE_SOURCE_COMMIT` to the exact 40-character Git commit for every build and deploy. The image label and `/api/health` expose that value so the running public artifact can be checked against its source.
 
 ## Run it yourself
 
-Self-hosting unlocks local Ollama, LM Studio, and OpenWebUI instances as well as the supported cloud providers.
+Self-hosting unlocks local Ollama, LM Studio, and OpenWebUI instances as well as all supported cloud providers.
 
 ```bash
 pip install "git+https://github.com/JhinxDev/omakase.git"
@@ -154,17 +108,18 @@ taste notes + scored history + unwatched candidates
        ranked picks + reasoning + history pairing
 ```
 
-Omakase keeps its extension points small. Source adapters normalize watch history and candidates. Model adapters handle provider protocols. The recommendation engine builds one prompt and returns the same structured result to the terminal, JSON output, or browser interface.
+Omakase keeps its extension points small. Source adapters normalize watch history and candidates. Model adapters handle provider protocols. The recommendation engine builds one prompt and returns the same structured result to the terminal, JSON output, MCP client, or browser interface.
 
 ## Commands
 
+| Command | Purpose |
+| --- | --- |
 | `omakase recommend -u <user>` | Prepare a recommendation menu |
 | `omakase web` | Start the browser interface |
 | `omakase mcp` | Run the stdio MCP server for AI agents |
 | `omakase init` | Create a starter taste profile |
 | `omakase sources` | List available history sources |
 | `omakase backends` | List available model backends |
-| `omakase account-bootstrap` | Import an Argon2id hash for the Lite owner |
 
 Run `omakase recommend --help` for all options. See [CONTRIBUTING.md](CONTRIBUTING.md) for development and extension guidance.
 
@@ -188,29 +143,15 @@ Run `omakase mcp` to expose three zero-dependency stdio tools (`omakase_list_sou
 
 ## Hosted deployment
 
-The base Compose stack persists Lite state in the `omakase_lite_data` volume. Production uses a protected Fernet keyring to encrypt member-saved provider keys. To enable one or more OpenWebUI instances on the hosted counter, set `OMAKASE_OPENWEBUI_ALLOWED_ORIGINS` to a comma-separated list of exact HTTPS origins (for example, `https://models.example.com`); paths are entered by the visitor and redirects are not followed.
+The Compose stack runs Omakase as a stateless BYOK container on port `8765` with zero database volumes or stored user secrets. To enable one or more OpenWebUI instances on the hosted counter, set `OMAKASE_OPENWEBUI_ALLOWED_ORIGINS` to a comma-separated list of exact HTTPS origins (for example, `https://models.example.com`):
 
 ```bash
-mkdir -p secrets
-python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())" \
-  > secrets/lite-keyring
-chmod 700 secrets
-chgrp 1000 secrets/lite-keyring
-chmod 640 secrets/lite-keyring
-docker compose -f compose.yaml -f compose.production.yaml up -d --build
-```
-
-The container runs as UID/GID 1000, so the keyring must be group-readable by GID 1000 on the host. Keep the Lite keyring stable: replacing it makes existing saved provider keys unreadable. Only an authenticated owner with valid same-origin and CSRF checks can create an invitation. One-time invitation secrets travel in the URL fragment, which browsers do not send in HTTP requests, then move into the claim form body. Bootstrap the owner by piping an existing Argon2id hash over standard input; the command never prints the hash:
-
-```bash
-docker compose exec -T omakase \
-  omakase account-bootstrap --email owner@example.com --password-hash-stdin \
-  < /secure/path/owner.argon2
+OMAKASE_SOURCE_COMMIT=$(git rev-parse HEAD) docker compose up -d --build
 ```
 
 ## Scope
 
-This public repository is the bring-your-own-key recommendation tool, stdio MCP server, and recommendation-only Lite accounts. For a full self-hosted anime, movie, and TV media hub with web/tvOS/iOS players, see [Omakase Plus](https://github.com/JhinxDev/omakase-plus), which runs as a separate application and is not connected to this hosted demo.
+This public repository is strictly the stateless Bring-Your-Own-Key recommendation engine, CLI, web counter, and stdio MCP server. For a full self-hosted anime, movie, and TV media hub with web/tvOS/iOS players, see [Omakase Plus](https://github.com/JhinxDev/omakase-plus), which runs as a separate application and is not connected to this hosted demo.
 
 ## License
 

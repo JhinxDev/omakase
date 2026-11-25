@@ -1,8 +1,9 @@
-# docker compose stack for self-hosting Omakase as a BYOK web demo.
+# docker compose stack for self-hosting Omakase as a stateless BYOK web counter.
 #
 # Drop this in /opt/stacks/omakase/ on CT 101, then `docker compose up -d`.
-# Guest visitors supply a request-local LLM key. The production overlay adds
-# the server-only keyring used to encrypt invited members' saved provider keys.
+# Visitors supply a request-local LLM key per menu. Nothing is stored in a
+# database, cookie, or server keyring, and there is no shared provider key
+# or MAL client ID.
 #
 # Proxy https://omakase.jhinx.dev -> http://<CT-IP>:8765 in NPM.
 
@@ -22,15 +23,6 @@ services:
       OMAKASE_TRUST_PROXY: "true"
       OMAKASE_SOURCE_COMMIT: ${OMAKASE_SOURCE_COMMIT:-development}
       OMAKASE_PUBLIC_URL: ${OMAKASE_PUBLIC_URL:-https://omakase.jhinx.dev}
-      OMAKASE_LITE_DATA_DIR: /home/omakase/data/lite
-    volumes:
-      - omakase_lite_data:/home/omakase/data/lite
-    # Guests supply request-local LLM keys. Invited members may save an
-    # encrypted provider key through the production keyring overlay. The
-    # service has no shared provider key or MAL client ID.
+      OMAKASE_OPENWEBUI_ALLOWED_ORIGINS: ${OMAKASE_OPENWEBUI_ALLOWED_ORIGINS:-}
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
-
-volumes:
-  omakase_lite_data:
-    name: omakase_lite_data

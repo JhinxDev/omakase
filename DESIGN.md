@@ -1,73 +1,16 @@
-# Public Omakase design contract (v1.0.0 — Carbon Obsidian + Iris Atelier)
+# Public Omakase design contract (v1.0.0: Carbon Obsidian + Iris Atelier)
 
-Updated November 25, 2026: unified guest counter, returned tasting menu cards, and invited Lite account surfaces onto the Carbon Obsidian + Iris Atelier system matching `jhinx.dev`. Canvas `#09090B`, bento surfaces `#111216` / `#181A20`, hairline borders `rgba(255, 255, 255, 0.09)` / `0.17`, iris violet accent `#A78BFA` (`#C4B5FD` focus), high-contrast text `#F4F4F5` / `#A1A1AA`, and self-hosted Geist font (`public-theme.css`). Single-pass `style.css`, `result_menu.css`, and `account.css` eliminate legacy paper/vermilion CSS override debt.
+Updated November 25, 2026: unified the BYOK counter and returned tasting-menu cards onto the Carbon Obsidian + Iris Atelier system matching `jhinx.dev`, and removed Omakase Lite accounts so the web app operates purely as a stateless Bring-Your-Own-Key (BYOK) experience.
 
-Returned recommendation cards (`.recommendation`) preserve full titles, reasoning, history pairing, predicted fit, side-by-side compare, and safe outbound links while adding optional HTTPS cover art (`s4.anilist.co` / `cdn.myanimelist.net` allowlisted in both backend and CSP) and format/episode/studio/genre badges. Self-hosted Geist font loading is explicitly permitted via `font-src 'self'` in CSP.
+## Tokens & Typography
 
-## Prior contract (October 28, 2026)
+- Canvas `#09090B`, bento surfaces `#111216` / `#181A20`, hover `#1E2028`, hairline borders `rgba(255, 255, 255, 0.09)` / `0.17`, iris violet accent `#A78BFA` (`#C4B5FD` focus), high-contrast text `#F4F4F5` / `#A1A1AA`.
+- Self-hosted variable Geist typography (`geist-variable.woff2` with `GEIST-OFL.txt` + `GEIST-SOURCE.md` provenance) via `font-src 'self'` in CSP.
+- Single-pass `style.css` and `result_menu.css` eliminate legacy paper/vermilion CSS override debt.
 
-Current direction: the owner's accepted Plus family style adapted to a recommendation-only guest counter and invited Lite account. Midnight #090B12, surfaces #111620/#182031, iris #C4B5FD, bright readable text and self-hosted Geist. `public-theme.css` owns shared tokens and the unmodified licensed font; `GEIST-OFL.txt` and source provenance ship beside it. No owner artwork, profile, provider configuration or private media is copied.
+## Counter & Result Menu Surfaces
 
-The public moonlit atelier stays the product-specific illustration. It is editorial art, with a clearly fictional optional study; actual recommendation results remain separate and show their real title, full reasoning, history pairing and predicted fit. Headlines use normal Geist weight600–650 with calm 10–24px contours. Body remains16px with generous line height. Labels/statuses use normal case and14–16px text; monospace is reserved for code. No text requires an entrance animation to become readable.
-
-The working counter retains Model, History and Taste, existing native inputs and controller IDs. Selected choices have explicit borders plus checked state. Controls target48px, visible keyboard focus, inline errors and preserved recovery. Phone layouts stack without horizontal scrolling. Results and two-pick comparison retain full long titles, independent fields, safe outbound links and ordinary focus behavior. Reduced motion disables nonessential movement.
-
-Guest keys and taste notes remain request-local; successful completion clears the key. Provider billing remains the visitor's responsibility. Invited Lite persistence, encrypted member keys, account history and member-owned AniList actions stay distinct. This presentation change adds no inference, acquisition, Plex or cross-edition account access.
-
-Verification and creative acceptance are separate. Current source and safe mocked browser receipts belong to the active release record; this file does not claim deployment or real provider qualification.
-
-## Guest preparation, October 29
-
-A fresh hosted guest starts with empty optional taste notes. The interface must never invent a personal profile or report notes added until that visitor supplies them. Existing invited members still receive their own saved notes; local owner-configured profiles retain their separate behavior.
-
-On phones, the native three-course preparation strip stays in one compact row. The first complete provider choice is visible at the Prepare my menu destination at320px and390px widths with an844px viewport. Model and History keep their current step and status; the scope/readiness footer appears on Taste. Supporting labels remain14px and the privacy disclosure has a44px target. Key and history privacy remains available through a native details control without dominating the initial task. Desktop composition and the midnight family palette remain intact.
-
-## Superseded September/October counter contract (historical)
-
-The following prior contract records the accepted4f6 baseline and is retained for history. Its paper palette and serif typography are superseded by the contract above.
-
-# Omakase public counter design
-
-This record describes the isolated candidate based on a599d24f57057470d2edabd07b40bd9e1d0a8684. Source of truth: src/omakase/web/templates/index.html, static/style.css, static/app.js and static/menu_receipt.js. Qualification and publication state belongs in the coordinator's current review record.
-
-An anime viewer brings scored history, a model provider and optional taste notes to prepare a short recommendation menu. The signature is a working preparation slip: Model, History and Taste remain the native course controls and show non-sensitive input readiness. A receipt identifies the next incomplete course and whether the menu is limited to Plan to Watch. Input presence is never a claim that history, credentials or a recommendation was verified.
-
-## Palette and type
-
-The light-only interface uses paper #f4f0e7, raised paper #fffcf6 and secondary surface #eee8dc. Text is #23211f, secondary #4f4942 and supporting #625b52. Deep vermilion #a33624 marks selection, action and score; primary buttons use #fffaf1 text and #812a1c hover. Blue #174b72 supplies focus. Rules use #bcb3a4 and stronger control edges #877c6c. Errors are #a02324, success #286047. Selected controls have a solid #f3e1d9 backing. Legacy token names paper/ink are preserved for controller and stylesheet compatibility; semantic roles here reflect their actual colors.
-
-Use installed fonts only, with no network font download: Iowan Old Style, Palatino Linotype, then Georgia for display; Segoe UI then system sans for body; Consolas then monospace for small utility text. No font files are redistributed. Rendering varies by operating system. Body is 16px with 1.55 line height. The welcome title is clamp(2.35rem,3.5vw,3.65rem), 400 weight, 1.08 line height and -0.04em tracking; at <=560px it is 2.5rem. Counter title is 2rem/1.1. Course headings are clamp(1.9rem,3vw,2.6rem)/1.12, becoming 2rem on narrow screens. Field labels use 0.84rem semibold; hints use 0.82rem/1.6. Receipt utility label is 0.73rem/1.5 monospace; statuses and footer text are at least 0.8rem. Result titles use clamp(1.7rem,2.5vw,2.7rem) at 1 line height.
-
-## Composition and surfaces
-
-Navigation and welcome use a 1320px maximum and horizontal clamp(1rem,3vw,2.5rem) padding. The compact introduction pairs the title with the retained moonlit artwork in a ruled frame. Its desktop image is 220px tall at 52% center, becoming 140px tall at center 58% below 860px. Artwork bytes and their provenance are retained from the baseline; illustrative art does not represent model results.
-
-The active counter is max 1240px, 100% minus 2rem, with one flexible form column and a 290px context column. At <=1000px the context column is 240px. At <=860px the form leads a single-column layout, followed by context. The field guide changes from a 0.8fr/1.2fr split with 4rem gap to one column at 860px. Existing older component breakpoints at 1120px, 860px and 560px are retained; final counter overrides own this composition.
-
-Surfaces use square corners, 1px rules and little shadow. Controls retain inset borders, a vermilion selected edge and a solid selected background. The preparation slip has dashed top/bottom rules. Desktop has three course columns; <=560px uses three compact rows with number, course name and wrapping status. Existing course labels remain keyboard and screen-reader names. Main controls aim for 44px touch height; individual secondary controls retain their component dimensions and require actual target coverage. Loading retains its existing layout. Actual results use full-width numbered menu slips and an optional two-pick comparison that stacks on narrow screens. Do not replace real results with decorative fictional picks.
-
-## States, motion and recovery
-
-The controller owns native input validation, provider/source switching, export reading, job creation/polling/cancellation and results. Course arrival focuses its heading and scrolls instantly to it. Field validation places the single existing error banner beside the invalid field, adds error-text to aria-describedby and sets aria-invalid without discarding other descriptions. The native upload group also owns missing, oversized and unreadable export feedback: focus remains on its file input with a visible label outline, and its entire group scrolls into view. Long filenames wrap inside the control. Clearing an error removes only the owned token/state. General job errors focus the restored banner. After loading restores the setup form, successful completion focuses the results heading and positions it in the viewport.
-
-Result slips use static, fully readable entrances. Courses also avoid text opacity entrances. Ordinary anchor scrolling may be smooth; explicit focus/recovery arrivals are immediate. Reduced motion sets animation and transition durations to 0.001ms, one iteration and automatic scroll. No new 3D, audio, video, fonts or media is added.
-
-The preparation slip performs no request, persistence, logging or model inference. It never repeats entered keys, URL/model values, usernames, notes, filenames or export contents. AniList username presence and a locally read MAL export remain unverified inputs. Cook performs native validation and requests. Saved-key readiness uses only the controller's fixed native sentence, never a key suffix. A completed guest request clears the entered key and emits its ordinary input notification so the slip stays truthful.
-
-Guest requests, invitation-only Lite saved accounts and direct-provider costs keep their original distinctions. Account routes, controls, inputs, provider options, recovery controls, privacy text, artwork and safe external-link filtering remain required. No backend, authentication, data model, storage or hosting change is implied by this design record. Build/runtime, accessibility, loading, independent review, protected/live verification and owner-deferred physical-device/spoken-AT/continuous-perception evidence remain separate acceptance gates.
-
-## Illustrated menu study, October 8
-
-The retained painting's five framed scenes are paired with five explicit fictional picks. A native details disclosure keeps the opening compact. Its five ordinary toggle buttons select the matching picture frame and show a reason, a history pairing and an estimated fit. Those are the three fields supplied by the actual Recommendation type. The example titles, histories and ratings are invented and labelled together before any pick. They explain the form of a menu, not recommendation quality or actual model inference.
-
-The original image bytes remain unchanged. A full 16:9 view keeps the five frames spatially aligned at every width; a paper and vermilion outline identifies the selected scene. The numbered controls sit below the picture and remain at least44px tall. Text changes immediately with no entrance fade or new animation. Selection preserves keyboard focus. Closing the native disclosure removes the picture outline, and reopening retains the selected example. Without JavaScript, the disclosure presents all five examples as ordinary readable articles.
-
-menu_study.js observes only its own disclosure and controls. It performs no requests, reads no setup inputs, creates no storage and changes no provider/account/controller behavior. A separate illustrative footnote identifies estimated scores as predictions. The existing preparation slip and actual result path remain the primary working product. Creative acceptance and current affected technical/loading review remain pending for this new source; prior candidate reports stay frozen.
-
-## Actual menus and account continuity, October 8 repair
-
-Actual returned recommendations now use the same paper, serif and vermilion counter language. Each numbered slip displays its returned title, full reason, history pairing and explicitly labelled predicted fit. Missing fields use a truthful absence label. The interface does not invent titles, pairings, scores or matches to the illustration. Two Compare toggles can expose returned fields together; choosing two disables the remaining toggles until a pick is removed. The comparison is in memory for the current menu and resets when results change. Remove and clear return focus to the relevant surviving toggle; a same-page comparison link focuses its heading. Existing account feedback, watched/progress controls and safe external URL filtering remain required.
-
-Lite account pages share the guest page's light tokens and installed font stacks. The navigation reuses the existing mark. The compact sign-in and invitation gates use restrained serif headings, ruled paper panels and strong field edges; focused fields and the provider select use the existing blue focus color. No external fonts are requested. Sign-in identifies invitation-only access and supplies a direct guest-menu link. Login, invitation, role restrictions, CSRF, provider encryption, cookies and data handlers retain their existing behavior. These are source changes awaiting affected browser, account-template, loading and final release qualification; earlier reports and failures retain their original source identities.
-
-Affected account checks exposed a320px saved-history heading overflow and invalid list semantics when the invitation ledger is empty. Narrow section headings now place their count underneath and use a bounded type scale. The invitation ledger declares a list only when it contains invitation items. Neither repair changes records, roles or invitation policy. Failed browser evidence remains preserved; later affected checks are separate records.
+- Three explicit courses: Model (provider, Quick/Deep mode or optional override, BYOK credential), History (public AniList handle or in-memory MyAnimeList XML/GZ export, optional Plan to Watch filter), and Taste (notes or scores-only toggle).
+- The preparation slip (`menu_receipt.js`) reflects current form readiness in memory without persistence or secret exposure.
+- Returned recommendation cards (`.recommendation`) preserve full titles, reasoning, history pairing, predicted fit, side-by-side compare (`Compare this pick` up to 2 items), and safe outbound links while adding optional HTTPS cover art (`s4.anilist.co` / `cdn.myanimelist.net` allowlisted in both backend and CSP) and format/episode/studio/genre badges.
+- All guest API keys, watch history, and taste notes remain strictly request-local: held in memory for one recommendation job, cleared from the browser input upon completion, and scrubbed in backend `finally` cleanup without accounts, cookies, keyrings, or database storage.

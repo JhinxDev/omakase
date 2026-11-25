@@ -1,7 +1,6 @@
-# Multi-stage Dockerfile for self-hosting Omakase as a web service.
+# Multi-stage Dockerfile for self-hosting Omakase as a stateless BYOK web service.
 # Build:  docker build -t omakase:latest .
-# Run the base guest-only stack with Compose. Add compose.production.yaml and
-# its protected Lite keyring for encrypted member-saved provider keys.
+# Run:    docker compose up -d --build
 
 FROM python:3.12-slim AS builder
 WORKDIR /build
@@ -17,9 +16,7 @@ LABEL org.opencontainers.image.description="An LLM-powered sommelier for anime"
 LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.revision="${OMAKASE_SOURCE_COMMIT}"
 
-RUN useradd --create-home --uid 1000 omakase && \
-    mkdir -p /home/omakase/data/lite && \
-    chown -R omakase:omakase /home/omakase/data
+RUN useradd --create-home --uid 1000 omakase
 WORKDIR /home/omakase
 
 COPY --from=builder /wheels/*.whl /tmp/
