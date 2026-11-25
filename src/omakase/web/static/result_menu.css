@@ -1,11 +1,11 @@
-/* Actual returned menus only. Shared shell and account surfaces keep their owner. */
+/* Returned recommendation menus, cover art cards, and side-by-side comparison. */
 #results {
   color: var(--public-text);
-  background: var(--public-bg);
+  background: var(--public-surface);
 }
 
 #results .results__header {
-  border-bottom: 2px solid var(--public-accent);
+  border-bottom: 1px solid var(--public-border-strong);
   align-items: start;
 }
 
@@ -14,7 +14,7 @@
 }
 
 #results .results__header p {
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   line-height: 1.6;
   color: var(--public-muted);
 }
@@ -33,9 +33,9 @@
   justify-content: space-between;
   gap: 0.5rem 1.5rem;
   padding: 0.85rem 0;
-  border-block: 1px dashed var(--public-border);
+  border-block: 1px dashed var(--public-border-strong);
   margin-bottom: 1.5rem;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   line-height: 1.6;
 }
 
@@ -52,36 +52,79 @@
 #results .results-list {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  border-left: 0;
   gap: 1.25rem;
 }
 
 #results .recommendation {
-  grid-template-columns: 3.5rem minmax(0, 1fr) 9rem;
+  display: grid;
+  grid-template-columns: 3.25rem minmax(0, 1fr) 9.5rem;
   gap: 1rem 1.5rem;
-  min-height: 0;
-  padding: 1.75rem;
-  border: 1px solid var(--public-border);
-  border-radius: 18px;
-  background: var(--public-surface);
-  animation: none;
+  padding: 1.65rem;
+  border: 1px solid var(--public-border-strong);
+  border-radius: 16px;
+  background: var(--public-bg);
   overflow-wrap: anywhere;
+  transition: border-color 140ms ease;
+}
+
+#results .recommendation:hover {
+  border-color: rgba(167, 139, 250, 0.35);
+}
+
+#results .recommendation--with-cover {
+  grid-template-columns: 3.25rem 84px minmax(0, 1fr) 9.5rem;
+}
+
+#results .recommendation__cover {
+  width: 84px;
+  height: 120px;
+  border-radius: 10px;
+  border: 1px solid var(--public-border-strong);
+  object-fit: cover;
+  background: var(--public-surface-raised);
+  align-self: start;
 }
 
 #results .recommendation__number {
   color: var(--public-accent);
   font-family: var(--display);
-  font-size: 2rem;
-  font-weight: 550;
+  font-size: 1.9rem;
+  font-weight: 600;
   line-height: 1;
-  font-variant-numeric: lining-nums;
+  font-variant-numeric: lining-nums tabular-nums;
 }
 
 #results .recommendation__title {
-  font-size: clamp(1.5rem, 2.5vw, 2.25rem);
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.45rem, 2.3vw, 2.05rem);
   font-weight: 600;
-  line-height: 1.12;
-  margin-bottom: 1.4rem;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+#results .recommendation__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0 0 1.15rem;
+}
+
+#results .recommendation__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--public-border-strong);
+  border-radius: 999px;
+  background: var(--public-surface);
+  color: var(--public-muted);
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+#results .recommendation__badge--genre {
+  border-color: rgba(167, 139, 250, 0.28);
+  background: var(--public-accent-soft);
+  color: var(--public-focus);
 }
 
 #results .result-menu-label {
@@ -91,38 +134,37 @@
   font-size: 0.875rem;
   font-weight: 400;
   line-height: 1.5;
-  letter-spacing: 0;
-  text-transform: none;
 }
 
 #results .recommendation__body > .result-menu-label {
-  margin: 0 0 0.4rem;
+  margin: 0 0 0.35rem;
 }
 
 #results .recommendation__reason {
   max-width: 72ch;
-  margin: 0 0 1.4rem;
+  margin: 0 0 1.25rem;
   color: var(--public-text);
   font-size: 1rem;
-  line-height: 1.7;
+  line-height: 1.68;
 }
 
 #results .recommendation__match {
-  font-size: 0.95rem;
-  line-height: 1.6;
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.55;
   color: var(--public-muted);
 }
 
 #results .recommendation__match strong {
   display: block;
-  color: var(--public-muted);
+  color: var(--public-text);
   font-weight: 500;
-  margin-top: 0.4rem;
+  margin-top: 0.35rem;
 }
 
 #results .recommendation__score {
   display: block;
-  grid-column: 3;
+  grid-column: -2 / -1;
   grid-row: 1;
   text-align: left;
   padding-left: 1.2rem;
@@ -133,30 +175,38 @@
 #results .recommendation__score strong {
   display: block;
   color: var(--public-accent);
-  font-size: 2.6rem;
-  line-height: 1.25;
-  margin: 0.4rem 0;
+  font-size: 2.5rem;
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 0.35rem 0;
+  font-variant-numeric: tabular-nums;
 }
 
 #results .recommendation__score span {
   display: block;
   color: var(--public-muted);
   font-size: 0.875rem;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 #results .recommendation__link {
-  color: var(--public-accent);
+  grid-column: 2 / -1;
+  color: var(--public-focus);
   font-size: 0.9rem;
+  font-weight: 500;
   line-height: 1.5;
-  min-height: 48px;
-  display: flex;
+  min-height: 44px;
+  width: fit-content;
+  display: inline-flex;
   align-items: center;
   text-decoration: underline;
-  text-underline-offset: 0.2em;
+  text-underline-offset: 0.22em;
 }
 
 #results .recommendation__actions {
+  grid-column: 2 / -1;
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.6rem;
   margin: 0;
 }
@@ -165,17 +215,15 @@
 #results .result-menu-button {
   min-height: 48px;
   max-width: 100%;
-  border: 1px solid #566079;
+  border: 1px solid var(--public-border-strong);
   border-radius: 10px;
-  padding: 0.65rem 0.85rem;
+  padding: 0.65rem 0.9rem;
   background: var(--public-surface);
   color: var(--public-muted);
   font-family: var(--body);
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 500;
   line-height: 1.4;
-  letter-spacing: normal;
-  text-transform: none;
   cursor: pointer;
 }
 
@@ -184,7 +232,7 @@
 #results .result-menu-button:hover,
 #results .result-menu-button[aria-pressed="true"] {
   color: var(--public-focus);
-  background: #27223B;
+  background: var(--public-accent-soft);
   border-color: var(--public-accent);
 }
 
@@ -193,6 +241,15 @@
   background: var(--public-surface-raised);
   border-color: var(--public-border);
   cursor: not-allowed;
+  opacity: 0.65;
+}
+
+#results .recommendation__feedback-status {
+  flex-basis: 100%;
+  min-height: 1.2em;
+  margin: 0.2rem 0 0;
+  color: var(--public-success);
+  font-size: 0.875rem;
 }
 
 #results .recommendation__compare {
@@ -204,8 +261,8 @@
 }
 
 #results .result-menu-comparison-link {
-  color: var(--public-accent);
-  font-size: 0.85rem;
+  color: var(--public-focus);
+  font-size: 0.875rem;
   line-height: 1.5;
   min-height: 48px;
   align-content: center;
@@ -213,13 +270,12 @@
 }
 
 #results .result-menu-comparison {
-  margin-bottom: 1rem;
-  border: 1px solid #566079;
-  border-radius: 10px;
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--public-border-strong);
   border-top: 3px solid var(--public-accent);
-  border-radius: 18px;
+  border-radius: 16px;
   overflow: hidden;
-  background: var(--public-surface);
+  background: var(--public-bg);
 }
 
 #results .result-menu-comparison__header {
@@ -233,7 +289,7 @@
 }
 
 #results .result-menu-comparison__header p {
-  margin: 0 0 0.4rem;
+  margin: 0 0 0.35rem;
   color: var(--public-muted);
   font-size: 0.875rem;
 }
@@ -242,8 +298,8 @@
 #results .result-menu-comparison__title {
   margin: 0;
   font-family: var(--display);
-  font-size: 1.75rem;
-  font-weight: 400;
+  font-size: 1.65rem;
+  font-weight: 600;
   line-height: 1.2;
   overflow-wrap: anywhere;
 }
@@ -268,18 +324,17 @@
 }
 
 #results .result-menu-comparison__pick dl {
-  margin: 1.5rem 0;
+  margin: 1.35rem 0;
   overflow-wrap: anywhere;
 }
 
 #results .result-menu-comparison__pick dd {
-  margin: 0.4rem 0 1.25rem;
+  margin: 0.35rem 0 1.2rem;
   color: var(--public-text);
   font-size: 0.95rem;
-  line-height: 1.7;
+  line-height: 1.68;
 }
 
-/* Shared rows keep equivalent fields aligned even when one title wraps. */
 @supports (grid-template-rows: subgrid) {
   @media (min-width: 761px) {
     #results .result-menu-comparison__list { grid-template-rows: repeat(9, auto); }
@@ -300,23 +355,44 @@
   #results .results__header { grid-template-columns: minmax(0, 1fr); gap: 1.25rem; }
   #results .results__header > div:last-child { text-align: left; max-width: none; }
   #results .results__actions { justify-content: flex-start; }
-  #results .recommendation { grid-template-columns: 2.5rem minmax(0, 1fr); gap: 1rem; }
-  #results .recommendation__number { font-size: 2.25rem; }
+  #results .recommendation,
+  #results .recommendation--with-cover {
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    gap: 1rem;
+  }
+  #results .recommendation__cover { grid-column: 2; width: 72px; height: 102px; }
+  #results .recommendation__body { grid-column: 2; }
+  #results .recommendation__number { font-size: 2rem; }
   #results .recommendation__score { grid-column: 2; grid-row: auto; border: 0; padding: 0; }
   #results .recommendation__score strong { font-size: 2rem; }
-  #results .recommendation__score span { display: block; }
   #results .recommendation__link,
   #results .recommendation__actions,
   #results .recommendation__compare { grid-column: 2; }
   #results .result-menu-comparison__list { grid-template-columns: minmax(0, 1fr); }
-  #results .result-menu-comparison__pick + .result-menu-comparison__pick { border-left: 0; border-top: 1px solid var(--public-border); }
+  #results .result-menu-comparison__pick + .result-menu-comparison__pick {
+    border-left: 0;
+    border-top: 1px solid var(--public-border);
+  }
+}
+
+@media (max-width: 560px) {
+  #results {
+    width: 100%;
+    padding: 2rem 1rem;
+    border-inline: 0;
+    border-radius: 0;
+  }
+  #results .recommendation,
+  #results .recommendation--with-cover {
+    padding: 1.1rem;
+    grid-template-columns: 1.75rem minmax(0, 1fr);
+    gap: 0.75rem;
+  }
+  #results .recommendation__number { font-size: 1.35rem; }
+  #results .results__header h2 { font-size: 2rem; line-height: 1.15; }
 }
 
 @media (max-width: 420px) {
-  #results .recommendation { grid-template-columns: 1.75rem minmax(0, 1fr); gap: 0.75rem; }
-  #results .recommendation__number { font-size: 1.6rem; }
   #results .result-menu-comparison__header,
   #results .result-menu-comparison__pick { padding: 1rem; }
 }
-
-@media (max-width: 560px) { #results { width: 100%; padding: 2rem 1rem; border: 0; } #results .recommendation { padding: 1rem; grid-template-columns: 1.5rem minmax(0,1fr); gap: .75rem; } #results .recommendation__number { font-size: 1.25rem; } #results .results__header h2 { font-size: 2rem; line-height: 1.15; } }

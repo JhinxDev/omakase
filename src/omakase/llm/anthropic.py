@@ -34,7 +34,7 @@ class AnthropicLLM(BaseLLM):
         # nudge plus the prompt's own format instructions yield valid JSON.
         payload = {
             "model": self.model,
-            "max_tokens": 4096,
+            "max_tokens": 8192,
             "temperature": temperature,
             "system": (
                 "You are a careful recommender. Respond with a single JSON "
@@ -49,8 +49,8 @@ class AnthropicLLM(BaseLLM):
         if self.api_key:
             headers["x-api-key"] = self.api_key
 
-        with httpx.Client(timeout=300) as client:
-            resp = client.post(f"{self.url}/v1/messages", json=payload, headers=headers)
+        with httpx.Client(timeout=300, follow_redirects=False) as client:
+            resp = client.post(f"{self.url.rstrip('/')}/v1/messages", json=payload, headers=headers)
             resp.raise_for_status()
             data = resp.json()
             blocks = data.get("content", [])

@@ -22,7 +22,7 @@ def _valid_payload() -> dict[str, object]:
         "llm_type": "openai",
         "llm_url": "https://api.openai.com",
         "api_key": "request-only-key",
-        "model": "gpt-4o-mini",
+        "model": "gpt-5-mini",
         "source": "anilist",
         "username": "demo-user",
         "profile": "I like thoughtful science fiction.",
@@ -93,7 +93,7 @@ def test_hosted_demo_rejects_local_and_custom_provider_urls(monkeypatch):
     local_payload = _valid_payload() | {
         "llm_type": "ollama",
         "llm_url": "http://localhost:11434",
-        "model": "qwen2.5:7b",
+        "model": "qwen3:8b",
     }
     assert client.post("/api/recommend", json=local_payload).status_code == 400
 

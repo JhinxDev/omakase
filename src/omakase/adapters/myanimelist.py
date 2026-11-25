@@ -29,9 +29,9 @@ from urllib.request import Request, urlopen
 import httpx
 
 from omakase.adapters.base import SourceAdapter, register
-from omakase.types import MediaItem, SourceData
+from omakase.types import MediaItem, SourceData, safe_cover_url
 
-USER_AGENT = "Omakase/0.1 (homelab; +https://github.com/JhinxDev/omakase)"
+USER_AGENT = "Omakase/1.0 (+https://github.com/JhinxDev/omakase)"
 
 MAL_API = "https://api.myanimelist.net/v2"
 JIKAN_API = "https://api.jikan.moe/v4"
@@ -103,7 +103,7 @@ def _jikan_fetch(endpoint: str) -> dict:
 
 def _mal_fetch(endpoint: str, client_id: str | None = None) -> dict:
     req = Request(f"{MAL_API}{endpoint}", headers=_mal_headers(client_id))
-    with urlopen(req) as resp:
+    with urlopen(req, timeout=30) as resp:
         return json.loads(resp.read().decode())
 
 
@@ -120,6 +120,9 @@ def _parse_media(m: dict, source: str = "jikan") -> MediaItem:
         fmt = m.get("media_type", "")
         episodes = m.get("num_episodes")
         mean_score = m.get("mean")
+        cover_image = safe_cover_url(
+            m.get("main_picture", {}).get("large") or m.get("main_picture", {}).get("medium")
+        )
     else:
         mid = m.get("mal_id", 0)
         title = m.get("title", "")
@@ -131,6 +134,8 @@ def _parse_media(m: dict, source: str = "jikan") -> MediaItem:
         fmt = m.get("type", "")
         episodes = m.get("episodes")
         mean_score = m.get("score")
+        jpg = m.get("images", {}).get("jpg", {})
+        cover_image = safe_cover_url(jpg.get("large_image_url") or jpg.get("image_url"))
 
     if desc and len(desc) > 200:
         desc = desc[:200] + "..."
@@ -145,6 +150,7 @@ def _parse_media(m: dict, source: str = "jikan") -> MediaItem:
         studio=studio,
         description=desc,
         mean_score=float(mean_score) if mean_score else None,
+        cover_image=cover_image,
     )
 
 
@@ -255,7 +261,7 @@ class MALAdapter(SourceAdapter):
         items: list[MediaItem] = []
         seen_ids: set[int] = set()
         # Request available fields; some may be omitted if not authorized
-        fields = "genres,studios,synopsis,media_type,num_episodes,mean"
+        fields = "genres,studios,synopsis,media_type,num_episodes,mean,main_picture"
 
         for status in statuses:
             offset = 0
@@ -336,7 +342,7 @@ class MALAdapter(SourceAdapter):
         items: list[MediaItem] = []
         offset = 0
         limit = 100
-        fields = "genres,studios,synopsis,media_type,num_episodes,mean"
+        fields = "genres,studios,synopsis,media_type,num_episodes,mean,main_picture"
         while True:
             try:
                 data = _mal_fetch(

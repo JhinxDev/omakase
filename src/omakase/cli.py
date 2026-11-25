@@ -59,7 +59,7 @@ def cli():
 @click.option(
     "--model",
     "-m",
-    default="qwen2.5:7b",
+    default="qwen3:8b",
     help="Model name",
     show_default=True,
     envvar="OMAKASE_MODEL",
@@ -236,3 +236,11 @@ def web(host, port):
     from omakase.web.server import run_server
 
     run_server(host=host, port=port)
+
+
+@cli.command()
+def mcp():
+    """Run the stdio MCP server for AI agents."""
+    from omakase.mcp_server import serve_stdio
+
+    serve_stdio()

@@ -10,9 +10,11 @@ Omakase is an anime sommelier. It pairs your scored watch history with a short d
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
 
-![A moonlit recommendation cabinet with framed landscapes, a tea cup, and a modern tablet](src/omakase/web/static/generated/omakase-atelier.webp)
+![Omakase Carbon Obsidian counter](docs/images/omakase-counter-v1.webp)
 
-The public counter and invited Lite accounts share a midnight, iris and Geist interface. For a self-hosted anime, movie and TV library, see [Omakase Plus](https://github.com/JhinxDev/omakase-plus) and its [setup guide](https://omakase-plus.jhinx.dev/docs/quickstart).
+The public counter and invited Lite accounts share a Carbon Obsidian (`#09090B`) and Iris Atelier (`#A78BFA`) interface with self-hosted Geist typography. For a self-hosted anime, movie and TV library, see [Omakase Plus](https://github.com/JhinxDev/omakase-plus) and its [setup guide](https://omakase-plus.jhinx.dev/docs/quickstart).
+
+![Omakase recommendation menu cards with cover art and metadata chips](docs/images/omakase-results-v1.webp)
 
 ## What makes it different
 
@@ -26,7 +28,7 @@ It combines:
 - an unwatched candidate pool;
 - a model selected and paid for by you.
 
-The result is a short tasting menu instead of an endless popularity feed. Each recommendation includes a predicted fit, an explanation, and a title from your history that helped shape the match.
+The result is a short tasting menu instead of an endless popularity feed. Each recommendation includes a predicted fit, an explanation, a title from your history that helped shape the match, and (when matched in AniList or MyAnimeList) cover artwork, format, episode count, studio, and genre badges.
 
 ## Public counter
 
@@ -91,7 +93,7 @@ running public artifact can be checked against its source.
 Self-hosting unlocks local Ollama, LM Studio, and OpenWebUI instances as well as the supported cloud providers.
 
 ```bash
-pip install omakase
+pip install "git+https://github.com/JhinxDev/omakase.git"
 
 # Create a starter taste profile
 omakase init
@@ -156,16 +158,33 @@ Omakase keeps its extension points small. Source adapters normalize watch histor
 
 ## Commands
 
-| Command | Purpose |
-|---|---|
 | `omakase recommend -u <user>` | Prepare a recommendation menu |
 | `omakase web` | Start the browser interface |
+| `omakase mcp` | Run the stdio MCP server for AI agents |
 | `omakase init` | Create a starter taste profile |
 | `omakase sources` | List available history sources |
 | `omakase backends` | List available model backends |
 | `omakase account-bootstrap` | Import an Argon2id hash for the Lite owner |
 
 Run `omakase recommend --help` for all options. See [CONTRIBUTING.md](CONTRIBUTING.md) for development and extension guidance.
+
+## MCP server
+
+Run `omakase mcp` to expose three zero-dependency stdio tools (`omakase_list_sources`, `omakase_list_backends`, and `omakase_recommend`) to any MCP-compatible client:
+
+```json
+{
+  "mcpServers": {
+    "omakase": {
+      "command": "omakase",
+      "args": ["mcp"],
+      "env": {
+        "OMAKASE_API_KEY": "your-provider-key"
+      }
+    }
+  }
+}
+```
 
 ## Hosted deployment
 
@@ -191,7 +210,7 @@ docker compose exec -T omakase \
 
 ## Scope
 
-This public repository is the bring-your-own-key recommendation tool plus its recommendation-only Lite accounts. Omakase Plus is a separate private system and is not connected to the hosted demo.
+This public repository is the bring-your-own-key recommendation tool, stdio MCP server, and recommendation-only Lite accounts. For a full self-hosted anime, movie, and TV media hub with web/tvOS/iOS players, see [Omakase Plus](https://github.com/JhinxDev/omakase-plus), which runs as a separate application and is not connected to this hosted demo.
 
 ## License
 
