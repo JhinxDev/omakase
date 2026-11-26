@@ -6,7 +6,9 @@ Omakase is a stateless, Bring-Your-Own-Key (BYOK) anime sommelier. It pairs your
 
 [Try the public counter](https://omakase.jhinx.dev) · [Read the case study](https://jhinx.dev/projects/omakase) · [Visit jhinx.dev](https://jhinx.dev)
 
-[![CI](https://github.com/JhinxDev/omakase/actions/workflows/ci.yml/badge.svg)](https://github.com/JhinxDev/omakase/actions/workflows/ci.yml)
+[![CI](https://github.com/JhinxDev/omakase/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/JhinxDev/omakase/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/JhinxDev/omakase)](https://github.com/JhinxDev/omakase/releases/latest)
+[![Container](https://img.shields.io/badge/ghcr.io-jhinxdev%2Fomakase-2496ED?logo=docker&logoColor=white)](https://github.com/JhinxDev/omakase/pkgs/container/omakase)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
 
@@ -143,9 +145,11 @@ Run `omakase mcp` to expose three zero-dependency stdio tools (`omakase_list_sou
 
 ## Hosted deployment
 
-The Compose stack runs Omakase as a stateless BYOK container on port `8765` with zero database volumes or stored user secrets. To enable one or more OpenWebUI instances on the hosted counter, set `OMAKASE_OPENWEBUI_ALLOWED_ORIGINS` to a comma-separated list of exact HTTPS origins (for example, `https://models.example.com`):
+Pull the prebuilt GHCR container image (`ghcr.io/jhinxdev/omakase:latest`) or build locally with Compose. The stack runs Omakase as a stateless BYOK container on port `8765` with zero database volumes or stored user secrets. To enable one or more OpenWebUI instances on the hosted counter, set `OMAKASE_OPENWEBUI_ALLOWED_ORIGINS` to a comma-separated list of exact HTTPS origins (for example, `https://models.example.com`):
 
 ```bash
+docker compose up -d
+# Or build from local source:
 OMAKASE_SOURCE_COMMIT=$(git rev-parse HEAD) docker compose up -d --build
 ```
 

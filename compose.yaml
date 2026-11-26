@@ -10,11 +10,11 @@
 services:
   omakase:
     container_name: omakase
+    image: ghcr.io/jhinxdev/omakase:latest
     build:
       context: .
       args:
         OMAKASE_SOURCE_COMMIT: ${OMAKASE_SOURCE_COMMIT:-development}
-    image: omakase:latest
     restart: unless-stopped
     ports:
       - "8765:8765"
