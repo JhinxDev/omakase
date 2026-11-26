@@ -1,6 +1,6 @@
 [project]
 name = "omakase"
-version = "1.0.0"
+version = "1.0.1"
 description = "An LLM-powered sommelier for anime. Connect any list, point it at any LLM, get a tasting menu of recommendations."
 readme = "README.md"
 requires-python = ">=3.10"
