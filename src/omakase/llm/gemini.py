@@ -46,12 +46,16 @@ class GeminiLLM(BaseLLM):
         if self.api_key:
             headers["x-goog-api-key"] = self.api_key
 
+        model_id = self.model.strip().removeprefix("models/")
+        endpoint = f"{self.url.rstrip('/')}/v1beta/models/{model_id}:generateContent"
+
         with httpx.Client(timeout=300, follow_redirects=False) as client:
-            resp = client.post(
-                f"{self.url.rstrip('/')}/v1beta/models/{self.model}:generateContent",
-                json=payload,
-                headers=headers,
-            )
+            resp = client.post(endpoint, json=payload, headers=headers)
+            if resp.status_code == 400 and supports_json:
+                detail = (resp.text or "").lower()
+                if "responsemimetype" in detail or "json" in detail:
+                    payload["generationConfig"].pop("responseMimeType", None)
+                    resp = client.post(endpoint, json=payload, headers=headers)
             resp.raise_for_status()
             data = resp.json()
             candidates = data.get("candidates", [])

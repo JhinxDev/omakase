@@ -6,44 +6,66 @@ const PROVIDERS = {
   openai: {
     label: "OpenAI",
     url: "https://api.openai.com",
-    fast: "gpt-5-mini",
-    pro: "gpt-5",
-    hint: "Create or manage a key in your OpenAI account.",
+    hint: "Create or manage an API key in your OpenAI Platform account.",
+    publicCatalog: false,
+    starters: [
+      { id: "gpt-5-mini", name: "GPT-5 mini", tier: "fast" },
+      { id: "gpt-5", name: "GPT-5", tier: "balanced" },
+      { id: "gpt-6.2-astra", name: "GPT-6.2 Astra", tier: "flagship" },
+      { id: "gpt-5-pro", name: "GPT-5 Pro", tier: "reasoning" },
+    ],
   },
   anthropic: {
     label: "Anthropic",
     url: "https://api.anthropic.com",
-    fast: "claude-haiku-4-5",
-    pro: "claude-sonnet-4-6",
-    hint: "Use a key from your Anthropic Console account.",
+    hint: "Use an API key from your Anthropic Console account.",
+    publicCatalog: false,
+    starters: [
+      { id: "claude-haiku-5-5", name: "Claude Haiku 5.5", tier: "fast" },
+      { id: "claude-sonnet-5-5", name: "Claude Sonnet 5.5", tier: "balanced" },
+      { id: "claude-opus-5-5", name: "Claude Opus 5.5", tier: "reasoning" },
+    ],
   },
   gemini: {
     label: "Gemini",
     url: "https://generativelanguage.googleapis.com",
-    fast: "gemini-3.8-flash",
-    pro: "gemini-4-hydrogen",
     hint: "Use a Gemini API key from Google AI Studio.",
+    publicCatalog: false,
+    starters: [
+      { id: "gemini-3.8-flash", name: "Gemini 3.8 Flash", tier: "fast" },
+      { id: "gemini-4-hydrogen", name: "Gemini 4 Hydrogen", tier: "balanced" },
+      { id: "gemini-4-neon", name: "Gemini 4 Neon", tier: "reasoning" },
+      { id: "gemini-4-carbon", name: "Gemini 4 Carbon", tier: "flagship" },
+    ],
   },
   deepseek: {
     label: "DeepSeek",
     url: "https://api.deepseek.com",
-    fast: "deepseek-v4-flash",
-    pro: "deepseek-v4-pro",
-    hint: "Use a key from the DeepSeek Platform.",
+    hint: "Use an API key from the DeepSeek Platform.",
+    publicCatalog: false,
+    starters: [
+      { id: "deepseek-flash", name: "DeepSeek Flash", tier: "fast" },
+      { id: "deepseek-v4-pro", name: "DeepSeek V4 Pro", tier: "reasoning" },
+    ],
   },
   openrouter: {
     label: "OpenRouter",
     url: "https://openrouter.ai/api",
-    fast: "openai/gpt-5-mini",
-    pro: "anthropic/claude-sonnet-4.6",
-    hint: "Use an OpenRouter key with access to the selected model.",
+    hint: "Browse OpenRouter models anytime; paste a key to verify and cook.",
+    publicCatalog: true,
+    starters: [
+      { id: "openai/gpt-5-mini", name: "OpenAI: GPT-5 mini", tier: "fast" },
+      { id: "anthropic/claude-sonnet-5.5", name: "Anthropic: Claude Sonnet 5.5", tier: "balanced" },
+      { id: "google/gemini-3.8-flash", name: "Google: Gemini 3.8 Flash", tier: "fast" },
+      { id: "deepseek/deepseek-v4-pro", name: "DeepSeek: V4 Pro", tier: "reasoning" },
+    ],
   },
   openwebui: {
     label: "OpenWebUI",
     url: "",
-    fast: "",
-    pro: "",
-    hint: "Use an API key created by your OpenWebUI account.",
+    hint: "Enter an owner-approved HTTPS instance URL and your OpenWebUI API key.",
+    publicCatalog: false,
+    starters: [],
   },
 };
 
@@ -54,7 +76,7 @@ const LOADING_PHASES = [
   { at: 4, text: "Mapping the patterns in your scores..." },
   { at: 8, text: "Pairing the tasting menu..." },
   { at: 28, text: "The model is taking a closer look..." },
-  { at: 65, text: "Still preparing. Deep models can take longer." },
+  { at: 65, text: "Still preparing. Reasoning models can take longer." },
 ];
 
 let activeCourse = "model";
@@ -63,11 +85,18 @@ let loadingTimer = null;
 let loadingStartedAt = 0;
 let requestController = null;
 let activeJobId = "";
+let invalidField = null;
+let lastRecommendations = [];
+
+const providerCache = new Map();
+let activeTier = "all";
+let searchQuery = "";
+let selectedModelsByProvider = new Map();
+let openrouterAutoRequested = false;
 
 const byId = (id) => document.getElementById(id);
 const errorBannerHome = byId("error-banner").parentElement;
 const errorBannerNext = byId("error-banner").nextElementSibling;
-let invalidField = null;
 
 function showCourse(name, focusHeading = true) {
   if (!COURSE_ORDER.includes(name)) return;
@@ -116,16 +145,18 @@ function showError(message, course = activeCourse, fieldId = null) {
 
 function focusInvalidField(id) {
   const field = byId(id);
-  field.focus({ preventScroll: true });
-  field.closest(".field, .upload-field")?.scrollIntoView({ behavior: "instant", block: "center" });
+  field?.focus({ preventScroll: true });
+  field?.closest(".field, .upload-field")?.scrollIntoView({ behavior: "instant", block: "center" });
 }
 
 function clearError() {
   byId("error-banner").hidden = true;
   byId("error-text").textContent = "";
   if (invalidField) {
-    invalidField.removeAttribute("aria-invalid");
-    const descriptions = (invalidField.getAttribute("aria-describedby") || "").split(/\s+/).filter(id => id && id !== "error-text");
+    invalidField.setAttribute("aria-invalid", "false");
+    const descriptions = (invalidField.getAttribute("aria-describedby") || "")
+      .split(/\s+/)
+      .filter((id) => id && id !== "error-text");
     if (descriptions.length) invalidField.setAttribute("aria-describedby", descriptions.join(" "));
     else invalidField.removeAttribute("aria-describedby");
     invalidField = null;
@@ -143,32 +174,286 @@ function updateSelectedCards(selector) {
   });
 }
 
-function updateProvider() {
+function currentProviderCatalog(name) {
+  const cached = providerCache.get(name);
+  if (cached && Array.isArray(cached.models)) return cached;
+  const provider = PROVIDERS[name] || PROVIDERS.openai;
+  return {
+    source: "starter",
+    key_verified: false,
+    models: provider.starters,
+    error: "",
+  };
+}
+
+function formatContextLength(tokens) {
+  if (!Number.isFinite(tokens) || tokens <= 0) return "";
+  if (tokens >= 1000000) return `${(tokens / 1000000).toFixed(tokens % 1000000 === 0 ? 0 : 1)}M ctx`;
+  if (tokens >= 1000) return `${Math.round(tokens / 1000)}k ctx`;
+  return `${tokens} ctx`;
+}
+
+function createText(tag, className, value) {
+  const element = document.createElement(tag);
+  if (className) element.className = className;
+  element.textContent = value;
+  return element;
+}
+
+function syncResolvedModel() {
   const name = selectedValue("provider") || "openai";
-  const provider = PROVIDERS[name];
-  const mode = selectedValue("model-mode") || "fast";
+  const provider = PROVIDERS[name] || PROVIDERS.openai;
   const isOpenWebUI = name === "openwebui";
+  const catalog = currentProviderCatalog(name);
+  const models = catalog.models || [];
+
+  const chosenId =
+    selectedModelsByProvider.get(name) ||
+    models[0]?.id ||
+    provider.starters[0]?.id ||
+    "";
+
+  const override = isOpenWebUI
+    ? byId("openwebui_model").value.trim()
+    : byId("model_override").value.trim();
+
+  const resolvedModel = override || chosenId;
+  const matchedEntry = models.find((m) => m.id === resolvedModel);
+  const resolvedTier = matchedEntry?.tier || "balanced";
+
   byId("llm_type").value = name;
   byId("llm_url").value = isOpenWebUI
     ? byId("openwebui_url").value.trim().replace(/\/+$/, "")
     : provider.url;
-  byId("mode").value = isOpenWebUI ? "fast" : mode;
+  byId("model").value = resolvedModel;
+  byId("mode").value = resolvedTier === "reasoning" || resolvedTier === "flagship" ? "pro" : "fast";
+
+  if (!isOpenWebUI) {
+    byId("clear-model-override").hidden = !override;
+    byId("model-hint").textContent = resolvedModel
+      ? `Active model: ${resolvedModel}`
+      : "Enter a model ID or choose one from the list above.";
+  }
+
+  byId("setup-form").dispatchEvent(new Event("omakase:state-change"));
+}
+
+function renderModelExplorer() {
+  const name = selectedValue("provider") || "openai";
+  const provider = PROVIDERS[name] || PROVIDERS.openai;
+  const isOpenWebUI = name === "openwebui";
+  const catalog = currentProviderCatalog(name);
+  const allModels = catalog.models || [];
+
+  const statusNode = byId("model-fetch-status");
+  if (catalog.loading) {
+    statusNode.dataset.tone = "loading";
+    statusNode.textContent = `Loading ${provider.label} models...`;
+  } else if (catalog.error) {
+    statusNode.dataset.tone = "error";
+    statusNode.textContent = catalog.error;
+  } else if (catalog.source === "live" && catalog.key_verified) {
+    statusNode.dataset.tone = "verified";
+    statusNode.textContent = `Key verified. ${allModels.length} live models loaded.`;
+  } else if (catalog.source === "live_public") {
+    statusNode.dataset.tone = "verified";
+    statusNode.textContent = `${allModels.length} live public models loaded. Paste key to cook.`;
+  } else if (isOpenWebUI) {
+    statusNode.dataset.tone = "starter";
+    statusNode.textContent = "Enter your HTTPS URL and key, then load models.";
+  } else {
+    statusNode.dataset.tone = "starter";
+    statusNode.textContent = "Starter picks. Paste your key to load your live catalog.";
+  }
+
+  const hasFree = allModels.some((m) => Boolean(m.is_free));
+  const freePill = document.querySelector('.tier-pill[data-tier="free"]');
+  if (freePill) {
+    freePill.hidden = !hasFree;
+    if (!hasFree && activeTier === "free") activeTier = "all";
+  }
+
+  document.querySelectorAll(".tier-pill").forEach((pill) => {
+    pill.setAttribute("aria-pressed", String(pill.dataset.tier === activeTier));
+  });
+
+  const searchWrap = byId("model-search-wrap");
+  searchWrap.hidden = allModels.length <= 5;
+  if (searchWrap.hidden && searchQuery) {
+    searchQuery = "";
+    byId("model-search").value = "";
+  }
+
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filtered = allModels.filter((item) => {
+    if (activeTier === "free" && !item.is_free) return false;
+    if (activeTier === "reasoning" && item.tier !== "reasoning" && item.tier !== "flagship") {
+      return false;
+    }
+    if (activeTier === "fast" && item.tier !== "fast") return false;
+    if (activeTier === "balanced" && item.tier !== "balanced") return false;
+    if (!normalizedQuery) return true;
+    return (
+      String(item.id || "").toLowerCase().includes(normalizedQuery) ||
+      String(item.name || "").toLowerCase().includes(normalizedQuery)
+    );
+  });
+
+  let activeSelectedId = selectedModelsByProvider.get(name);
+  if (!activeSelectedId || !allModels.some((m) => m.id === activeSelectedId)) {
+    activeSelectedId = allModels[0]?.id || "";
+    if (activeSelectedId) selectedModelsByProvider.set(name, activeSelectedId);
+  }
+
+  const list = byId("model-list");
+  list.replaceChildren();
+
+  if (!filtered.length) {
+    const emptyText = allModels.length
+      ? "No models match this filter. Clear the search or enter a custom model ID below."
+      : "No preset models for OpenWebUI. Load from your instance or enter a model ID above.";
+    list.appendChild(createText("p", "model-empty", emptyText));
+  } else {
+    filtered.forEach((item) => {
+      const label = document.createElement("label");
+      const checked = item.id === activeSelectedId;
+      label.className = checked ? "model-option is-selected" : "model-option";
+
+      const radio = document.createElement("input");
+      radio.type = "radio";
+      radio.name = "selected-model";
+      radio.value = item.id;
+      radio.checked = checked;
+      radio.addEventListener("change", () => {
+        selectedModelsByProvider.set(name, item.id);
+        if (isOpenWebUI) byId("openwebui_model").value = item.id;
+        else byId("model_override").value = "";
+        updateSelectedCards(".model-option");
+        syncResolvedModel();
+      });
+
+      const title = createText("span", "model-option__name", item.name || item.id);
+      const meta = document.createElement("span");
+      meta.className = "model-option__meta";
+      const tierLabel = item.tier === "flagship" ? "Flagship" : item.tier || "Balanced";
+      meta.appendChild(createText("span", `tier-badge tier-badge--${item.tier || "balanced"}`, tierLabel));
+      if (item.is_free) {
+        meta.appendChild(createText("span", "tier-badge tier-badge--free", "Free"));
+      }
+      const ctxLabel = formatContextLength(item.context_length);
+      if (ctxLabel) {
+        meta.appendChild(createText("span", "tier-badge", ctxLabel));
+      }
+      const idLine = createText("span", "model-option__id", item.id);
+
+      label.append(radio, title, meta, idLine);
+      list.appendChild(label);
+    });
+  }
+
+  syncResolvedModel();
+}
+
+function updateProvider() {
+  const name = selectedValue("provider") || "openai";
+  const provider = PROVIDERS[name] || PROVIDERS.openai;
+  const isOpenWebUI = name === "openwebui";
+
   byId("model_override").disabled = isOpenWebUI;
-  byId("mode-field").hidden = isOpenWebUI;
   byId("model-override-fields").hidden = isOpenWebUI;
   document.querySelectorAll(".openwebui-field").forEach((field) => {
     field.hidden = !isOpenWebUI;
   });
-  const override = isOpenWebUI
-    ? byId("openwebui_model").value.trim()
-    : byId("model_override").value.trim();
-  byId("model").value = override || provider[mode];
+
   byId("key-hint").textContent = provider.hint;
-  if (!isOpenWebUI) {
-    byId("model-hint").textContent = `${mode === "fast" ? "Quick" : "Deep"} currently selects ${provider[mode]}.`;
-  }
   byId("api_key").placeholder = "Paste for this request only";
   updateSelectedCards(".choice-card");
+  renderModelExplorer();
+
+  if (name === "openrouter" && !providerCache.has("openrouter") && !openrouterAutoRequested) {
+    openrouterAutoRequested = true;
+    loadProviderModels({ quiet: true });
+  }
+}
+
+async function loadProviderModels({ quiet = false } = {}) {
+  const name = selectedValue("provider") || "openai";
+  const provider = PROVIDERS[name] || PROVIDERS.openai;
+  const isOpenWebUI = name === "openwebui";
+  const apiKey = byId("api_key").value.trim();
+  const customUrl = isOpenWebUI ? byId("openwebui_url").value.trim() : provider.url;
+
+  if (isOpenWebUI) {
+    let parsed;
+    try {
+      parsed = new URL(customUrl);
+    } catch {
+      parsed = null;
+    }
+    if (!parsed || parsed.protocol !== "https:" || !parsed.hostname) {
+      if (!quiet) showError("Enter the HTTPS URL for your OpenWebUI instance first.", "model", "openwebui_url");
+      return;
+    }
+  }
+
+  if (!provider.publicCatalog && !apiKey) {
+    if (!quiet) showError(`Paste your ${provider.label} API key to load live models.`, "model", "api_key");
+    return;
+  }
+
+  clearError();
+  providerCache.set(name, {
+    ...currentProviderCatalog(name),
+    loading: true,
+    error: "",
+  });
+  renderModelExplorer();
+
+  const btn = byId("fetch-models-btn");
+  btn.disabled = true;
+
+  try {
+    const response = await fetch("/api/providers/models", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      cache: "no-store",
+      body: JSON.stringify({
+        llm_type: name,
+        llm_url: customUrl,
+        api_key: apiKey,
+      }),
+    });
+    const data = await readApiResponse(response);
+    if (!response.ok) {
+      throw new Error(data.detail || `Could not load ${provider.label} models.`);
+    }
+    const models = Array.isArray(data.models) && data.models.length
+      ? data.models
+      : provider.starters;
+    providerCache.set(name, {
+      source: data.source || "live",
+      key_verified: Boolean(data.key_verified),
+      models,
+      loading: false,
+      error: "",
+    });
+    if (isOpenWebUI && models.length && !byId("openwebui_model").value.trim()) {
+      byId("openwebui_model").value = models[0].id;
+    }
+  } catch (error) {
+    const existing = currentProviderCatalog(name);
+    providerCache.set(name, {
+      source: existing.source === "live" ? "starter" : existing.source,
+      key_verified: false,
+      models: existing.models.length ? existing.models : provider.starters,
+      loading: false,
+      error: error.message || `Could not load ${provider.label} models.`,
+    });
+  } finally {
+    btn.disabled = false;
+    renderModelExplorer();
+  }
 }
 
 function updateSource() {
@@ -215,12 +500,13 @@ function validateCourse(name) {
       }
     }
     if (!byId("api_key").value.trim()) {
-      showError(
-        "Paste the key for the provider you selected.",
-        "model",
-        "api_key",
-      );
+      showError("Paste the key for the provider you selected.", "model", "api_key");
       focusInvalidField("api_key");
+      return false;
+    }
+    if (!byId("model").value.trim()) {
+      showError("Select a model or enter a model ID to continue.", "model", "model_override");
+      focusInvalidField("model_override");
       return false;
     }
   }
@@ -308,6 +594,8 @@ function setLoading(active) {
   byId("start-over").disabled = active;
   byId("results").setAttribute("aria-busy", String(active));
   if (active) {
+    const providerLabel = (PROVIDERS[byId("llm_type").value] || PROVIDERS.openai).label;
+    byId("loading-model-label").textContent = `${providerLabel} / ${byId("model").value}`;
     loadingStartedAt = Date.now();
     renderLoading();
     loadingTimer = window.setInterval(renderLoading, 1000);
@@ -423,13 +711,6 @@ async function runRecommendations(event) {
   }
 }
 
-function createText(tag, className, value) {
-  const element = document.createElement(tag);
-  if (className) element.className = className;
-  element.textContent = value;
-  return element;
-}
-
 function predictedFit(recommendation) {
   const value = recommendation.predicted_score;
   if (value === null || value === undefined || value === "") return null;
@@ -472,11 +753,14 @@ function createMenuComparison(recommendations) {
       link.hidden = !active;
     });
     list.replaceChildren();
-    selected.forEach(index => {
+    selected.forEach((index) => {
       const recommendation = recommendations[index];
       const article = document.createElement("article");
       article.className = "result-menu-comparison__pick";
-      article.append(createText("p", "result-menu-label", `Pick ${String(index + 1).padStart(2, "0")}`), createText("h4", "result-menu-comparison__title", recommendation.title));
+      article.append(
+        createText("p", "result-menu-label", `Pick ${String(index + 1).padStart(2, "0")}`),
+        createText("h4", "result-menu-comparison__title", recommendation.title),
+      );
       const details = document.createElement("dl");
       const fit = predictedFit(recommendation);
       [
@@ -517,10 +801,10 @@ function createMenuComparison(recommendations) {
       button.setAttribute("aria-pressed", "false");
       button.setAttribute("aria-controls", "results-comparison");
       button.setAttribute("aria-describedby", "results-compare-help results-compare-status");
-      const link = createText("a", "result-menu-comparison-link", "Read comparison ↑");
+      const link = createText("a", "result-menu-comparison-link", "Read comparison");
       link.href = "#results-comparison-title";
       link.hidden = true;
-      link.addEventListener("click", event => {
+      link.addEventListener("click", (event) => {
         event.preventDefault();
         const heading = byId("results-comparison-title");
         heading.focus({ preventScroll: true });
@@ -576,19 +860,23 @@ function displayResults(data) {
   const results = byId("results");
   const list = byId("results-list");
   list.replaceChildren();
-  const sourceLabel = data.source === "myanimelist" ? "MAL export" : "AniList";
-  byId("results-meta").textContent = `${sourceLabel} / ${data.recommendations.length} picks`;
-  const comparison = createMenuComparison(data.recommendations);
+  lastRecommendations = Array.isArray(data.recommendations) ? data.recommendations : [];
+  byId("copy-menu-btn").hidden = lastRecommendations.length === 0;
+  byId("copy-menu-label").textContent = "Copy menu";
 
-  if (!data.recommendations.length) {
-    const empty = createText("p", "empty-state", "The model returned no usable picks. Try Quick mode or another provider.");
+  const sourceLabel = data.source === "myanimelist" ? "MAL export" : "AniList";
+  const activeModel = byId("model").value;
+  byId("results-meta").textContent = `${sourceLabel} / ${lastRecommendations.length} picks / ${activeModel}`;
+  const comparison = createMenuComparison(lastRecommendations);
+
+  if (!lastRecommendations.length) {
+    const empty = createText("p", "empty-state", "The model returned no usable picks. Try another model or adjust your taste notes.");
     list.appendChild(empty);
   } else {
-    data.recommendations.forEach((recommendation, index) => {
+    lastRecommendations.forEach((recommendation, index) => {
       const article = document.createElement("article");
       const coverUrl = urlSafety.safeCoverUrl(recommendation.cover_image);
       article.className = coverUrl ? "recommendation recommendation--with-cover" : "recommendation";
-      article.style.setProperty("--result-index", index);
 
       const number = createText("span", "recommendation__number", String(index + 1).padStart(2, "0"));
       number.setAttribute("aria-label", `Pick ${index + 1}`);
@@ -609,7 +897,11 @@ function displayResults(data) {
       const score = document.createElement("div");
       score.className = "recommendation__score";
       const fit = predictedFit(recommendation);
-      score.append(createText("span", "result-menu-label", "Predicted fit"), createText("strong", "", fit === null ? "Not provided" : fit), createText("span", "", fit === null ? "" : "/ 10 · model estimate"));
+      score.append(
+        createText("span", "result-menu-label", "Predicted fit"),
+        createText("strong", "", fit === null ? "Not provided" : fit),
+        createText("span", "", fit === null ? "" : "/ 10 model estimate"),
+      );
 
       if (coverUrl) {
         const cover = document.createElement("img");
@@ -626,22 +918,50 @@ function displayResults(data) {
       } else {
         article.append(number, body, score);
       }
+
+      const actions = document.createElement("div");
+      actions.className = "recommendation__actions";
       const safeUrl = urlSafety.safeExternalUrl(recommendation.url);
       if (safeUrl) {
-        const link = createText("a", "recommendation__link", "Open anime page ↗");
+        const link = createText("a", "recommendation__link", "Open anime page");
         link.href = safeUrl;
         link.target = "_blank";
         link.rel = "noopener noreferrer";
         link.setAttribute("aria-label", `Open ${recommendation.title} in a new tab`);
-        article.appendChild(link);
+        actions.appendChild(link);
       }
       const compareControl = comparison?.addControl(index);
-      if (compareControl) article.appendChild(compareControl);
+      if (compareControl) actions.appendChild(compareControl);
+      if (actions.childNodes.length) article.appendChild(actions);
+
       list.appendChild(article);
     });
   }
 
   results.hidden = false;
+}
+
+async function copyMenuToClipboard() {
+  if (!lastRecommendations.length) return;
+  const lines = [
+    `# Omakase Tasting Menu (${byId("model").value})`,
+    "",
+    ...lastRecommendations.map((rec, i) => {
+      const fit = predictedFit(rec);
+      const fitText = fit === null ? "" : ` (${fit}/10)`;
+      const pairing = recommendationPairing(rec);
+      return `${i + 1}. **${rec.title}**${fitText}\n   - Why: ${recommendationReason(rec)}\n   - Paired with: ${pairing}`;
+    }),
+  ];
+  try {
+    await navigator.clipboard.writeText(lines.join("\n"));
+    byId("copy-menu-label").textContent = "Copied";
+    window.setTimeout(() => {
+      byId("copy-menu-label").textContent = "Copy menu";
+    }, 2000);
+  } catch {
+    byId("copy-menu-label").textContent = "Copy failed";
+  }
 }
 
 async function cancelActiveRequest() {
@@ -670,18 +990,116 @@ function bindEvents() {
   document.querySelectorAll("[data-next-course]").forEach((button) => {
     button.addEventListener("click", () => navigateToCourse(button.dataset.nextCourse));
   });
-  document.querySelectorAll('input[name="provider"], input[name="model-mode"]').forEach((input) => input.addEventListener("change", updateProvider));
-  document.querySelectorAll('input[name="list-source"]').forEach((input) => input.addEventListener("change", updateSource));
-  byId("model_override").addEventListener("input", updateProvider);
-  byId("openwebui_url").addEventListener("input", updateProvider);
-  byId("openwebui_model").addEventListener("input", updateProvider);
+
+  document.querySelectorAll('input[name="provider"]').forEach((input) => {
+    input.addEventListener("change", () => {
+      activeTier = "all";
+      searchQuery = "";
+      byId("model-search").value = "";
+      clearError();
+      updateProvider();
+    });
+  });
+
+  document.querySelectorAll(".tier-pill").forEach((pill) => {
+    pill.addEventListener("click", () => {
+      activeTier = pill.dataset.tier || "all";
+      renderModelExplorer();
+    });
+  });
+
+  byId("model-search").addEventListener("input", (event) => {
+    searchQuery = event.target.value || "";
+    renderModelExplorer();
+  });
+
+  byId("fetch-models-btn").addEventListener("click", () => {
+    loadProviderModels({ quiet: false });
+  });
+
+  byId("api_key").addEventListener("paste", () => {
+    window.setTimeout(() => {
+      if (byId("api_key").value.trim().length >= 8) {
+        loadProviderModels({ quiet: true });
+      }
+    }, 20);
+  });
+
+  byId("api_key").addEventListener("input", () => {
+    if (invalidField === byId("api_key") && byId("api_key").value.trim()) {
+      clearError();
+    }
+  });
+
+  byId("model_override").addEventListener("input", () => {
+    syncResolvedModel();
+    if (invalidField === byId("model_override") && byId("model").value.trim()) {
+      clearError();
+    }
+  });
+
+  byId("clear-model-override").addEventListener("click", () => {
+    byId("model_override").value = "";
+    syncResolvedModel();
+  });
+
+  byId("openwebui_url").addEventListener("input", () => {
+    syncResolvedModel();
+    if (invalidField === byId("openwebui_url")) clearError();
+  });
+
+  byId("openwebui_model").addEventListener("input", () => {
+    syncResolvedModel();
+    if (invalidField === byId("openwebui_model") && byId("openwebui_model").value.trim()) {
+      clearError();
+    }
+  });
+
+  document.querySelectorAll('input[name="list-source"]').forEach((input) => {
+    input.addEventListener("change", () => {
+      clearError();
+      updateSource();
+    });
+  });
+
+  byId("username").addEventListener("input", () => {
+    if (invalidField === byId("username") && byId("username").value.trim()) {
+      clearError();
+    }
+  });
+
   byId("skip_profile").addEventListener("change", updateProfileState);
-  byId("profile").addEventListener("input", updateWordCount);
+  byId("profile").addEventListener("input", () => {
+    updateWordCount();
+    if (invalidField === byId("profile") && byId("profile").value.trim()) {
+      clearError();
+    }
+  });
+
+  document.querySelectorAll("[data-taste-chip]").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const box = byId("profile");
+      if (byId("skip_profile").checked) {
+        byId("skip_profile").checked = false;
+        updateProfileState();
+      }
+      const line = chip.dataset.tasteChip || "";
+      const existing = box.value.trim();
+      if (!existing.includes(line)) {
+        box.value = existing ? `${existing}\n- ${line}` : `- ${line}`;
+        box.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+      box.focus();
+    });
+  });
+
   byId("mal_export_file").addEventListener("change", onMalFileSelected);
   byId("upload-clear").addEventListener("click", clearMalFile);
   byId("setup-form").addEventListener("submit", runRecommendations);
   byId("cancel-request").addEventListener("click", cancelActiveRequest);
   byId("start-over").addEventListener("click", startOver);
+  byId("copy-menu-btn").addEventListener("click", copyMenuToClipboard);
+
   byId("toggle-key").addEventListener("click", () => {
     const key = byId("api_key");
     const reveal = key.classList.contains("masked-credential");

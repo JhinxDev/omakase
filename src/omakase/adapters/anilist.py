@@ -7,13 +7,16 @@ AniList blocks Python's default User-Agent, so we set a custom one.
 from __future__ import annotations
 
 import json
+import time
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 from omakase.adapters.base import SourceAdapter, register
 from omakase.types import MediaItem, SourceData, safe_cover_url
 
 API_URL = "https://graphql.anilist.co"
-USER_AGENT = "Omakase/1.0 (+https://github.com/JhinxDev/omakase)"
+USER_AGENT = "Omakase/2.0 (+https://github.com/JhinxDev/omakase)"
+_RETRYABLE_STATUS = {429, 502, 503, 504}
 
 
 @register("anilist")
@@ -22,17 +25,25 @@ class AniListAdapter(SourceAdapter):
 
     def _graphql(self, query: str, variables: dict | None = None) -> dict:
         body = json.dumps({"query": query, "variables": variables or {}}).encode()
-        req = Request(
-            API_URL,
-            data=body,
-            headers={
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "User-Agent": USER_AGENT,
-            },
-        )
-        with urlopen(req, timeout=30) as resp:
-            return json.loads(resp.read().decode())
+        for attempt in range(3):
+            req = Request(
+                API_URL,
+                data=body,
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "User-Agent": USER_AGENT,
+                },
+            )
+            try:
+                with urlopen(req, timeout=30) as resp:
+                    return json.loads(resp.read().decode())
+            except HTTPError as exc:
+                if exc.code in _RETRYABLE_STATUS and attempt < 2:
+                    time.sleep(0.6 * (attempt + 1))
+                    continue
+                raise
+        return {}
 
     def _fetch_history(self, username: str) -> list[MediaItem]:
         query = """
