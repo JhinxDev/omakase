@@ -310,6 +310,16 @@ for (const name of ["server.py", "templates/index.html"]) {
       await capture("initial");
       assert.equal(posts, 0);
       assert.equal(await page.locator("#profile").inputValue(), "", "fresh guest notes are empty");
+      assert.equal(await page.locator(".model-option").count(), 0, "no hardcoded starter model cards before live load");
+      assert.equal(await page.locator("#model-controls").isVisible(), false, "filter controls stay hidden until models load");
+      assert((await page.locator("#model-list .model-empty").innerText()).includes("API key"), "clean prompt to paste key before loading");
+      assert.equal(await page.locator("#field-guide .field-guide__card").count(), 4, "4 clean field-guide cards");
+      assert.equal(await page.locator("#field-guide details").count(), 0, "no stretched details boxes in field-guide");
+      if (width === 1440) {
+        await page.locator("#field-guide").scrollIntoViewIfNeeded();
+        await capture("field-guide");
+        await page.evaluate(() => window.scrollTo(0, 0));
+      }
       assert.notEqual(
         await page.locator('[data-receipt="taste"]').innerText(),
         "Taste notes added",
@@ -339,6 +349,7 @@ for (const name of ["server.py", "templates/index.html"]) {
 
       // Test OpenRouter live model catalog + tier pills + search + custom ID
       await page.locator("label.choice-card").filter({ has: page.locator('input[value="openrouter"]') }).click();
+      await page.locator("#model-controls").waitFor({ state: "visible" });
       await page.locator("#model-search").waitFor({ state: "visible" });
       await page.locator('.tier-pill[data-tier="free"]').click();
       assert.equal(await page.locator(".model-option").count(), 1);
@@ -360,12 +371,14 @@ for (const name of ["server.py", "templates/index.html"]) {
       await check("model-error");
       assert.equal(posts, 0);
 
-      // Load live OpenAI models and select custom/flagship model
+      // Load live OpenAI models and verify controls + auto-selection + custom override
       await page.locator("#api_key").fill("synthetic-not-a-provider-key");
       await page.locator("#fetch-models-btn").click();
       await page.waitForFunction(() =>
         document.querySelector("#model-fetch-status").textContent.includes("Key verified"),
       );
+      await page.locator("#model-controls").waitFor({ state: "visible" });
+      assert((await page.locator(".model-option").count()) >= 3);
       await page.locator("#model_override").fill("gpt-6.2-astra");
       assert.equal(await page.locator("#model").inputValue(), "gpt-6.2-astra");
 

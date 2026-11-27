@@ -8,67 +8,36 @@ const PROVIDERS = {
     url: "https://api.openai.com",
     hint: "Create or manage an API key in your OpenAI Platform account.",
     publicCatalog: false,
-    starters: [
-      { id: "gpt-6-luna", name: "GPT-6 Luna", tier: "fast" },
-      { id: "gpt-6.2-sol", name: "GPT-6.2 Sol", tier: "balanced" },
-      { id: "gpt-6.2-astra", name: "GPT-6.2 Astra", tier: "flagship" },
-      { id: "gpt-6.2-astra-pro", name: "GPT-6.2 Astra Pro", tier: "reasoning" },
-    ],
   },
   anthropic: {
     label: "Anthropic",
     url: "https://api.anthropic.com",
     hint: "Use an API key from your Anthropic Console account.",
     publicCatalog: false,
-    starters: [
-      { id: "claude-haiku-5-5", name: "Claude Haiku 5.5", tier: "fast" },
-      { id: "claude-sonnet-5-5", name: "Claude Sonnet 5.5", tier: "balanced" },
-      { id: "claude-opus-5-5", name: "Claude Opus 5.5", tier: "flagship" },
-      { id: "claude-fable-5-2", name: "Claude Fable 5.2", tier: "reasoning" },
-    ],
   },
   gemini: {
     label: "Gemini",
     url: "https://generativelanguage.googleapis.com",
     hint: "Use a Gemini API key from Google AI Studio.",
     publicCatalog: false,
-    starters: [
-      { id: "gemini-3.8-flash", name: "Gemini 3.8 Flash", tier: "fast" },
-      { id: "gemini-4-hydrogen", name: "Gemini 4 Hydrogen", tier: "balanced" },
-      { id: "gemini-4-neon", name: "Gemini 4 Neon", tier: "reasoning" },
-      { id: "gemini-4-carbon", name: "Gemini 4 Carbon", tier: "flagship" },
-    ],
   },
   deepseek: {
     label: "DeepSeek",
     url: "https://api.deepseek.com",
     hint: "Use an API key from the DeepSeek Platform.",
     publicCatalog: false,
-    starters: [
-      { id: "deepseek-flash", name: "DeepSeek Flash", tier: "fast" },
-      { id: "deepseek-v4-pro", name: "DeepSeek V4 Pro", tier: "reasoning" },
-    ],
   },
   openrouter: {
     label: "OpenRouter",
     url: "https://openrouter.ai/api",
     hint: "Browse OpenRouter models anytime; paste a key to verify and cook.",
     publicCatalog: true,
-    starters: [
-      { id: "openai/gpt-6.2-sol", name: "OpenAI: GPT-6.2 Sol", tier: "balanced" },
-      { id: "anthropic/claude-sonnet-5.5", name: "Anthropic: Claude Sonnet 5.5", tier: "balanced" },
-      { id: "google/gemini-4-hydrogen", name: "Google: Gemini 4 Hydrogen", tier: "balanced" },
-      { id: "deepseek/deepseek-v4.1-flash", name: "DeepSeek: DeepSeek V4.1 Flash", tier: "fast" },
-      { id: "openai/gpt-6.2-astra", name: "OpenAI: GPT-6.2 Astra", tier: "flagship" },
-      { id: "google/gemini-4-neon", name: "Google: Gemini 4 Neon", tier: "reasoning" },
-    ],
   },
   openwebui: {
     label: "OpenWebUI",
     url: "",
     hint: "Enter an owner-approved HTTPS instance URL and your OpenWebUI API key.",
     publicCatalog: false,
-    starters: [],
   },
 };
 
@@ -180,11 +149,11 @@ function updateSelectedCards(selector) {
 function currentProviderCatalog(name) {
   const cached = providerCache.get(name);
   if (cached && Array.isArray(cached.models)) return cached;
-  const provider = PROVIDERS[name] || PROVIDERS.openai;
   return {
-    source: "starter",
+    source: "idle",
     key_verified: false,
-    models: provider.starters,
+    models: [],
+    loading: false,
     error: "",
   };
 }
@@ -210,11 +179,7 @@ function syncResolvedModel() {
   const catalog = currentProviderCatalog(name);
   const models = catalog.models || [];
 
-  const chosenId =
-    selectedModelsByProvider.get(name) ||
-    models[0]?.id ||
-    provider.starters[0]?.id ||
-    "";
+  const chosenId = selectedModelsByProvider.get(name) || models[0]?.id || "";
 
   const override = isOpenWebUI
     ? byId("openwebui_model").value.trim()
@@ -235,7 +200,7 @@ function syncResolvedModel() {
     byId("clear-model-override").hidden = !override;
     byId("model-hint").textContent = resolvedModel
       ? `Active model: ${resolvedModel}`
-      : "Enter a model ID or choose one from the list above.";
+      : "No model selected yet. Paste your key to load live models, or type any model ID above.";
   }
 
   byId("setup-form").dispatchEvent(new Event("omakase:state-change"));
@@ -262,11 +227,19 @@ function renderModelExplorer() {
     statusNode.dataset.tone = "verified";
     statusNode.textContent = `${allModels.length} live public models loaded. Paste key to cook.`;
   } else if (isOpenWebUI) {
-    statusNode.dataset.tone = "starter";
+    statusNode.dataset.tone = "idle";
     statusNode.textContent = "Enter your HTTPS URL and key, then load models.";
+  } else if (provider.publicCatalog) {
+    statusNode.dataset.tone = "idle";
+    statusNode.textContent = "Load OpenRouter's live public catalog anytime.";
   } else {
-    statusNode.dataset.tone = "starter";
-    statusNode.textContent = "Starter picks. Paste your key to load your live catalog.";
+    statusNode.dataset.tone = "idle";
+    statusNode.textContent = `Paste your key to load your live ${provider.label} models.`;
+  }
+
+  const controlsWrap = byId("model-controls");
+  if (controlsWrap) {
+    controlsWrap.hidden = allModels.length === 0;
   }
 
   const hasFree = allModels.some((m) => Boolean(m.is_free));
@@ -312,9 +285,18 @@ function renderModelExplorer() {
   list.replaceChildren();
 
   if (!filtered.length) {
-    const emptyText = allModels.length
-      ? "No models match this filter. Clear the search or enter a custom model ID below."
-      : "No preset models for OpenWebUI. Load from your instance or enter a model ID above.";
+    let emptyText;
+    if (allModels.length) {
+      emptyText = "No models match this filter. Clear the search or enter a custom model ID below.";
+    } else if (catalog.loading) {
+      emptyText = `Fetching live models from ${provider.label}...`;
+    } else if (isOpenWebUI) {
+      emptyText = "Enter your OpenWebUI HTTPS URL and API key above, then click Load models, or type the exact model ID directly.";
+    } else if (provider.publicCatalog) {
+      emptyText = "Click Load models above to browse OpenRouter's live public catalog, or type any model ID below.";
+    } else {
+      emptyText = `Paste your ${provider.label} API key above to load every live model available on your account, or enter any model ID below.`;
+    }
     list.appendChild(createText("p", "model-empty", emptyText));
   } else {
     filtered.forEach((item) => {
@@ -431,9 +413,7 @@ async function loadProviderModels({ quiet = false } = {}) {
     if (!response.ok) {
       throw new Error(data.detail || `Could not load ${provider.label} models.`);
     }
-    const models = Array.isArray(data.models) && data.models.length
-      ? data.models
-      : provider.starters;
+    const models = Array.isArray(data.models) ? data.models : [];
     providerCache.set(name, {
       source: data.source || "live",
       key_verified: Boolean(data.key_verified),
@@ -447,9 +427,9 @@ async function loadProviderModels({ quiet = false } = {}) {
   } catch (error) {
     const existing = currentProviderCatalog(name);
     providerCache.set(name, {
-      source: existing.source === "live" ? "starter" : existing.source,
+      source: existing.models.length ? existing.source : "idle",
       key_verified: false,
-      models: existing.models.length ? existing.models : provider.starters,
+      models: existing.models,
       loading: false,
       error: error.message || `Could not load ${provider.label} models.`,
     });
@@ -1070,6 +1050,19 @@ function bindEvents() {
         loadProviderModels({ quiet: true });
       }
     }, 20);
+  });
+
+  byId("api_key").addEventListener("blur", () => {
+    const name = selectedValue("provider") || "openai";
+    const catalog = currentProviderCatalog(name);
+    if (
+      name !== "openwebui" &&
+      byId("api_key").value.trim().length >= 8 &&
+      !catalog.loading &&
+      !catalog.key_verified
+    ) {
+      loadProviderModels({ quiet: true });
+    }
   });
 
   byId("api_key").addEventListener("input", () => {

@@ -1,7 +1,8 @@
-"""Provider metadata, curated starter models, and live model discovery."""
+"""Provider metadata and live model discovery."""
 
 from __future__ import annotations
 
+import re
 import threading
 import time
 from dataclasses import dataclass
@@ -48,7 +49,7 @@ PROVIDER_CATALOG: dict[str, ProviderDescriptor] = {
     "openai": ProviderDescriptor(
         id="openai",
         label="OpenAI",
-        tagline="GPT-6 Luna, Sol & Astra",
+        tagline="Direct OpenAI API models",
         default_url=DEFAULT_URLS["openai"],
         key_hint="Create or manage an API key in your OpenAI Platform account.",
         key_url="https://platform.openai.com/api-keys",
@@ -56,37 +57,12 @@ PROVIDER_CATALOG: dict[str, ProviderDescriptor] = {
         requires_key=True,
         public_model_catalog=False,
         supports_discovery=True,
-        starters=(
-            {
-                "id": "gpt-6-luna",
-                "name": "GPT-6 Luna",
-                "tier": "fast",
-                "description": "Rapid, budget-friendly GPT-6 generation.",
-            },
-            {
-                "id": "gpt-6.2-sol",
-                "name": "GPT-6.2 Sol",
-                "tier": "balanced",
-                "description": "High-performance everyday reasoning & synthesis.",
-            },
-            {
-                "id": "gpt-6.2-astra",
-                "name": "GPT-6.2 Astra",
-                "tier": "flagship",
-                "description": "Flagship model for deep multi-title taste pairing.",
-            },
-            {
-                "id": "gpt-6.2-astra-pro",
-                "name": "GPT-6.2 Astra Pro",
-                "tier": "reasoning",
-                "description": "Extended reasoning for subtle taste nuance.",
-            },
-        ),
+        starters=(),
     ),
     "anthropic": ProviderDescriptor(
         id="anthropic",
         label="Anthropic",
-        tagline="Claude 5.5 & Fable 5.2",
+        tagline="Direct Claude API models",
         default_url=DEFAULT_URLS["anthropic"],
         key_hint="Use an API key from your Anthropic Console account.",
         key_url="https://console.anthropic.com/settings/keys",
@@ -94,37 +70,12 @@ PROVIDER_CATALOG: dict[str, ProviderDescriptor] = {
         requires_key=True,
         public_model_catalog=False,
         supports_discovery=True,
-        starters=(
-            {
-                "id": "claude-haiku-5-5",
-                "name": "Claude Haiku 5.5",
-                "tier": "fast",
-                "description": "Fast, cost-efficient Claude generation.",
-            },
-            {
-                "id": "claude-sonnet-5-5",
-                "name": "Claude Sonnet 5.5",
-                "tier": "balanced",
-                "description": "Sharp taste analysis and concise prose.",
-            },
-            {
-                "id": "claude-opus-5-5",
-                "name": "Claude Opus 5.5",
-                "tier": "flagship",
-                "description": "Deepest long-context character & theme matching.",
-            },
-            {
-                "id": "claude-fable-5-2",
-                "name": "Claude Fable 5.2",
-                "tier": "reasoning",
-                "description": "Long-horizon reasoning over large histories.",
-            },
-        ),
+        starters=(),
     ),
     "gemini": ProviderDescriptor(
         id="gemini",
         label="Gemini",
-        tagline="3.8 Flash & Gemini 4",
+        tagline="Google AI Studio models",
         default_url=DEFAULT_URLS["gemini"],
         key_hint="Use a Gemini API key from Google AI Studio.",
         key_url="https://aistudio.google.com/apikey",
@@ -132,37 +83,12 @@ PROVIDER_CATALOG: dict[str, ProviderDescriptor] = {
         requires_key=True,
         public_model_catalog=False,
         supports_discovery=True,
-        starters=(
-            {
-                "id": "gemini-3.8-flash",
-                "name": "Gemini 3.8 Flash",
-                "tier": "fast",
-                "description": "Fastest Gemini model with 1M context.",
-            },
-            {
-                "id": "gemini-4-hydrogen",
-                "name": "Gemini 4 Hydrogen",
-                "tier": "balanced",
-                "description": "Balanced next-gen taste reasoning.",
-            },
-            {
-                "id": "gemini-4-neon",
-                "name": "Gemini 4 Neon",
-                "tier": "reasoning",
-                "description": "High-reasoning pairing across large watchlists.",
-            },
-            {
-                "id": "gemini-4-carbon",
-                "name": "Gemini 4 Carbon",
-                "tier": "flagship",
-                "description": "Flagship depth for intricate taste profiles.",
-            },
-        ),
+        starters=(),
     ),
     "deepseek": ProviderDescriptor(
         id="deepseek",
         label="DeepSeek",
-        tagline="V4.1 Flash & V4 Pro",
+        tagline="DeepSeek API models",
         default_url=DEFAULT_URLS["deepseek"],
         key_hint="Use an API key from the DeepSeek Platform.",
         key_url="https://platform.deepseek.com/api_keys",
@@ -170,25 +96,12 @@ PROVIDER_CATALOG: dict[str, ProviderDescriptor] = {
         requires_key=True,
         public_model_catalog=False,
         supports_discovery=True,
-        starters=(
-            {
-                "id": "deepseek-flash",
-                "name": "DeepSeek Flash",
-                "tier": "fast",
-                "description": "Fast, economical 1M-context recommendation engine.",
-            },
-            {
-                "id": "deepseek-v4-pro",
-                "name": "DeepSeek V4 Pro",
-                "tier": "reasoning",
-                "description": "Deep hybrid reasoning over complex histories.",
-            },
-        ),
+        starters=(),
     ),
     "openrouter": ProviderDescriptor(
         id="openrouter",
         label="OpenRouter",
-        tagline="One key, live model hub",
+        tagline="Live public catalog, one key",
         default_url=DEFAULT_URLS["openrouter"],
         key_hint="Use an OpenRouter key. Browse live models anytime; paste a key to cook.",
         key_url="https://openrouter.ai/keys",
@@ -196,44 +109,7 @@ PROVIDER_CATALOG: dict[str, ProviderDescriptor] = {
         requires_key=True,
         public_model_catalog=True,
         supports_discovery=True,
-        starters=(
-            {
-                "id": "openai/gpt-6.2-sol",
-                "name": "OpenAI: GPT-6.2 Sol",
-                "tier": "balanced",
-                "description": "Balanced GPT-6.2 route on OpenRouter.",
-            },
-            {
-                "id": "anthropic/claude-sonnet-5.5",
-                "name": "Anthropic: Claude Sonnet 5.5",
-                "tier": "balanced",
-                "description": "Balanced Claude Sonnet via OpenRouter.",
-            },
-            {
-                "id": "google/gemini-4-hydrogen",
-                "name": "Google: Gemini 4 Hydrogen",
-                "tier": "balanced",
-                "description": "Balanced Gemini 4 route.",
-            },
-            {
-                "id": "deepseek/deepseek-v4.1-flash",
-                "name": "DeepSeek: DeepSeek V4.1 Flash",
-                "tier": "fast",
-                "description": "Fast 1M-context DeepSeek route.",
-            },
-            {
-                "id": "openai/gpt-6.2-astra",
-                "name": "OpenAI: GPT-6.2 Astra",
-                "tier": "flagship",
-                "description": "Flagship OpenAI synthesis route.",
-            },
-            {
-                "id": "google/gemini-4-neon",
-                "name": "Google: Gemini 4 Neon",
-                "tier": "reasoning",
-                "description": "Deep Gemini 4 reasoning route.",
-            },
-        ),
+        starters=(),
     ),
     "openwebui": ProviderDescriptor(
         id="openwebui",
@@ -446,12 +322,11 @@ def _is_non_chat_openai_model(model_id: str) -> bool:
         "diarize",
         "search-",
         "codex",
+        "computer-use",
     )
     if any(tok in low for tok in excluded_tokens):
         return True
-    return not (
-        low.startswith(("gpt-", "o1", "o3", "o4", "chatgpt-")) or low in {"gpt-5", "gpt-4o"}
-    )
+    return re.match(r"^(?:gpt-|o\d|chatgpt-)", low) is None
 
 
 def _is_non_text_gemini_model(model_id: str, item: dict[str, Any]) -> bool:
@@ -505,17 +380,35 @@ def _normalize_model(
     }
 
 
-def _prioritize_models(provider: str, models: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Put curated starter IDs first (in starter order), then newest models descending."""
-    desc = PROVIDER_CATALOG.get(provider)
-    starter_order = {item["id"]: index for index, item in enumerate(desc.starters if desc else ())}
+def _version_sort_key(model_id: str) -> tuple[tuple[int, int, int, int], int]:
+    """Extract numeric version and release date stamps dynamically from a model ID."""
+    low = model_id.lower()
+    date_match = re.search(r"(?:^|[-_])(20\d{6})(?:$|[-_])", low)
+    date_stamp = int(date_match.group(1)) if date_match else 0
+    cleaned = re.sub(r"(?:^|[-_])20\d{6}(?=$|[-_])", "", low)
+    # Ignore parameter-size / context tokens (e.g. 70b, 32b, 128k).
+    cleaned = re.sub(r"\b\d+[bmk]\b", "", cleaned)
+    ver_match = re.search(r"(?<![a-z0-9])(\d+(?:[.-]\d+){0,3})(?![a-z0-9])", cleaned)
+    if not ver_match:
+        # Match digits directly following known family names (e.g. gpt6, v4.1)
+        ver_match = re.search(r"(?:gpt|gemini|claude|deepseek|v|o)-?(\d+(?:[.-]\d+){0,2})", cleaned)
+    if ver_match:
+        parts = [int(p) for p in re.split(r"[.-]", ver_match.group(1))[:4]]
+        padded = tuple((parts + [0, 0, 0, 0])[:4])
+    else:
+        padded = (0, 0, 0, 0)
+    return (-padded[0], -padded[1], -padded[2], -padded[3]), -date_stamp
 
-    def sort_key(entry: dict[str, Any]) -> tuple[int, int, int, str]:
+
+def _prioritize_models(provider: str, models: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Sort discovered live models dynamically by newest release timestamp, then version."""
+    del provider  # Purely dynamic ordering across all providers without hardcoded pins.
+
+    def sort_key(entry: dict[str, Any]) -> tuple[int, tuple[int, int, int, int], int, int, str]:
         mid = entry["id"]
-        if mid in starter_order:
-            return (0, starter_order[mid], 0, mid.lower())
         created = int(entry.get("_created") or 0)
-        return (1, -created, 0 if entry.get("is_free") else 1, mid.lower())
+        version_desc, date_desc = _version_sort_key(mid)
+        return (-created, version_desc, date_desc, 0 if entry.get("is_free") else 1, mid.lower())
 
     deduped: dict[str, dict[str, Any]] = {}
     for item in models:

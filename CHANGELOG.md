@@ -4,6 +4,12 @@ All notable changes to Omakase are documented in this file.
 
 ## Unreleased
 
+## 2.2.0 - 2026-11-27
+
+- **Evergreen live model discovery without hardcoded UI models**: removed all hardcoded model names, versioned provider subtitles, and static starter lists from the web UI and `/api/backends` catalog; direct providers now guide guests to paste their key to load live `/models` (or type any model ID), OpenRouter auto-loads its public catalog without pinning stale models, and live discovery sorts purely dynamically by newest `created` timestamp and semantic version descending.
+- **Clean Field Guide & cache-busted brand assets**: replaced the stretched `<details>` FAQ grid in `#field-guide` with a balanced always-visible 2x2 card layout, and appended `?v={{ asset_version }}` to `/static/omakase-mark.svg`, `/static/favicon.svg`, and `/static/generated/omakase-atelier.webp` so browser caches immediately pick up the warm amber brand mark.
+- **Repository & dependency hygiene**: consolidated open Dependabot requirement bumps (`click>=8.5.1`, `rich>=15.0.0`, `ruff>=0.17.6`), switched Dependabot to monthly grouped PRs, and removed legacy `.coderabbit.yaml`.
+
 ## 2.1.0 - 2026-11-27
 
 - **Real colored brand logos**: replaced generic line icons with bundled local official brand SVGs (`openai.svg`, `anthropic.svg`, `gemini.svg`, `deepseek.svg`, `openrouter.svg`, `openwebui.svg`, `anilist.svg`, `myanimelist.svg`) inside tinted brand badges.
