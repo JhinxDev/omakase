@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from urllib.parse import quote_plus
 
@@ -10,6 +11,8 @@ from omakase.adapters.base import get_adapter
 from omakase.llm import get_llm
 from omakase.prompt import build_prompt
 from omakase.types import MediaItem, OmakaseConfig, Recommendation, SourceData, safe_cover_url
+
+_THINK_BLOCK_RE = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
 
 
 class EmptyHistoryError(Exception):
@@ -49,7 +52,11 @@ def _exclude_feedback_candidates(
 
 def _parse_recommendations(raw: str) -> list[Recommendation]:
     """Parse LLM JSON output into Recommendation objects. Graceful on failure."""
-    cleaned = raw.strip()
+    cleaned = _THINK_BLOCK_RE.sub("", raw or "").strip()
+    if "<think>" in cleaned.lower():
+        think_end = cleaned.lower().rfind("</think>")
+        if think_end != -1:
+            cleaned = cleaned[think_end + len("</think>") :].strip()
 
     # Strip markdown code fences if present
     if cleaned.startswith("```"):
@@ -59,19 +66,34 @@ def _parse_recommendations(raw: str) -> list[Recommendation]:
         if cleaned.endswith("```"):
             cleaned = cleaned[:-3].rstrip()
 
-    # Try to find a JSON object in the response
+    # Locate the outer JSON object or fallback top-level array
     if not cleaned.startswith("{"):
-        start = cleaned.find("{")
-        if start != -1:
-            cleaned = cleaned[start:]
-    if not cleaned.endswith("}"):
+        obj_start = cleaned.find("{")
+        arr_start = cleaned.find("[")
+        if obj_start != -1 and (arr_start == -1 or obj_start < arr_start):
+            cleaned = cleaned[obj_start:]
+        elif arr_start != -1:
+            cleaned = cleaned[arr_start:]
+
+    if cleaned.startswith("{") and not cleaned.endswith("}"):
         end = cleaned.rfind("}")
+        if end != -1:
+            cleaned = cleaned[: end + 1]
+    elif cleaned.startswith("[") and not cleaned.endswith("]"):
+        end = cleaned.rfind("]")
         if end != -1:
             cleaned = cleaned[: end + 1]
 
     try:
         data = json.loads(cleaned)
-        recs = data.get("recommendations", [])
+        if isinstance(data, list):
+            recs = data
+        elif isinstance(data, dict):
+            recs = data.get("recommendations", [])
+        else:
+            return []
+        if not isinstance(recs, list):
+            return []
         return [
             Recommendation(
                 title=r.get("title", "Unknown"),
@@ -80,6 +102,7 @@ def _parse_recommendations(raw: str) -> list[Recommendation]:
                 best_match_from_history=r.get("best_match_from_history", ""),
             )
             for r in recs
+            if isinstance(r, dict)
         ]
     except (json.JSONDecodeError, TypeError, ValueError) as e:
         print(f"[!] Failed to parse LLM output: {e}", file=sys.stderr)

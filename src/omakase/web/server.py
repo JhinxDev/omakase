@@ -30,6 +30,12 @@ from omakase.adapters.myanimelist import CandidateSourceError, MALExportError
 from omakase.engine import EmptyHistoryError, RecommendationOutputError
 from omakase.engine import run as run_pipeline
 from omakase.llm import list_backends
+from omakase.llm.catalog import (
+    PROVIDER_CATALOG,
+    ModelDiscoveryError,
+    discover_provider_models,
+    serialize_provider_catalog,
+)
 from omakase.types import DEFAULT_URLS, MODEL_PRESETS, OmakaseConfig, resolve_model_preset
 
 # Hard cap on the uploaded MAL export. A 5000-entry list compresses to
@@ -66,7 +72,12 @@ def _asset_version() -> str:
         _HERE / "static" / "result_menu.css",
         _HERE / "static" / "public-theme.css",
         _HERE / "static" / "app.js",
+        _HERE / "static" / "menu_receipt.js",
+        _HERE / "static" / "menu_study.js",
         _HERE / "static" / "url_safety.js",
+        _HERE / "static" / "omakase-mark.svg",
+        _HERE / "static" / "favicon.svg",
+        _HERE / "static" / "fraunces-400.woff2",
         _HERE / "static" / "generated" / "omakase-atelier.webp",
     )
     try:
@@ -191,6 +202,12 @@ class RecommendRequest(BaseModel):
     skip_profile: bool = False  # broader recs inferred from scoring history alone
 
 
+class ProviderModelsRequest(BaseModel):
+    llm_type: str = "openai"
+    llm_url: str = ""
+    api_key: str | None = ""
+
+
 class RecommendationOut(BaseModel):
     title: str
     predicted_score: float
@@ -258,11 +275,7 @@ def _is_hosted_public() -> bool:
     }
 
 
-def _validate_hosted_provider(
-    req: RecommendRequest,
-    *,
-    allow_deepseek_pro: bool = False,
-) -> str:
+def _validate_hosted_provider(req: RecommendRequest) -> str:
     if not _is_hosted_public():
         return req.llm_url.strip().rstrip("/")
     if req.llm_type == "openwebui":
@@ -290,18 +303,45 @@ def _validate_hosted_provider(
         )
     if not (req.api_key or "").strip():
         raise HTTPException(status_code=400, detail="Paste your provider key to continue.")
-    if req.llm_type == "deepseek":
-        allowed = {("fast", "deepseek-v4-flash")}
-        if allow_deepseek_pro:
-            allowed.add(("pro", "deepseek-v4-pro"))
-        if (req.mode, req.model) not in allowed:
-            detail = (
-                "Choose the standard DeepSeek Quick or Deep model."
-                if allow_deepseek_pro
-                else "DeepSeek Deep runs through the background recommendation endpoint."
-            )
-            raise HTTPException(status_code=400, detail=detail)
+    if not req.model.strip():
+        raise HTTPException(status_code=400, detail="Choose or enter a model ID to continue.")
     return expected
+
+
+def _validate_discovery_target(req: ProviderModelsRequest) -> tuple[str, str]:
+    provider = req.llm_type.strip().lower()
+    desc = PROVIDER_CATALOG.get(provider)
+    if desc is None:
+        raise HTTPException(status_code=400, detail=f"Unknown model provider '{req.llm_type}'.")
+    key = (req.api_key or "").strip()
+    if not _is_hosted_public():
+        base_url = req.llm_url.strip().rstrip("/") or desc.default_url
+        return base_url, key
+    if provider == "openwebui":
+        if not key:
+            raise HTTPException(status_code=400, detail="Paste your OpenWebUI key to load models.")
+        return _validate_openwebui_instance_url(req.llm_url), key
+    expected = _HOSTED_PROVIDERS.get(provider)
+    if expected is None:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "The hosted demo supports OpenAI, Anthropic, Gemini, DeepSeek, OpenRouter, "
+                "and owner-approved OpenWebUI instances."
+            ),
+        )
+    raw_url = req.llm_url.strip().rstrip("/")
+    if raw_url and raw_url != expected.rstrip("/"):
+        raise HTTPException(
+            status_code=400,
+            detail="The hosted demo can contact only the official provider endpoint.",
+        )
+    if provider != "openrouter" and not key:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Paste your {desc.label} API key to load live models.",
+        )
+    return expected, key
 
 
 def _validate_openwebui_instance_url(value: str) -> str:
@@ -354,15 +394,8 @@ def _validate_openwebui_instance_url(value: str) -> str:
     return urlunsplit(("https", authority, clean_path, "", ""))
 
 
-def _prepare_config(
-    req: RecommendRequest,
-    *,
-    allow_deepseek_pro: bool = False,
-) -> OmakaseConfig:
-    validated_llm_url = _validate_hosted_provider(
-        req,
-        allow_deepseek_pro=allow_deepseek_pro,
-    )
+def _prepare_config(req: RecommendRequest) -> OmakaseConfig:
+    validated_llm_url = _validate_hosted_provider(req)
     export_data: bytes | None = None
     if req.mal_export_b64:
         try:
@@ -607,7 +640,7 @@ def start_recommendation_job(req: RecommendRequest, request: Request):
         limit=10,
         window_seconds=60 * 60,
     )
-    cfg = _prepare_config(req, allow_deepseek_pro=True)
+    cfg = _prepare_config(req)
 
     now = time.monotonic()
     with _job_lock:
@@ -693,7 +726,7 @@ async def get_sources():
 
 @app.get("/api/backends")
 async def get_backends():
-    """Return registered LLM backends with default URLs + presets."""
+    """Return registered LLM backends with default URLs, presets, and provider catalog."""
     presets: dict[str, dict[str, str]] = {}
     for k, v in MODEL_PRESETS.items():
         presets[k] = {"model": v["model"], "supports_json": v["supports_json"]}
@@ -701,7 +734,26 @@ async def get_backends():
         "backends": list_backends(),
         "default_urls": DEFAULT_URLS,
         "presets": presets,
+        "providers": serialize_provider_catalog(hosted_only=_is_hosted_public()),
     }
+
+
+@app.post("/api/providers/models")
+def discover_provider_models_route(req: ProviderModelsRequest, request: Request):
+    """Fetch available models for a selected provider request-locally."""
+    _enforce_rate_limit(
+        request,
+        action="provider-models",
+        limit=30,
+        window_seconds=60 * 60,
+    )
+    try:
+        validated_url, api_key = _validate_discovery_target(req)
+        return discover_provider_models(req.llm_type, validated_url, api_key)
+    except ModelDiscoveryError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail) from exc
+    finally:
+        req.api_key = None
 
 
 @app.get("/api/models")
@@ -769,7 +821,7 @@ def _friendly_llm_error(e: httpx.HTTPStatusError, llm_type: str, model: str) -> 
     if code == 404:
         return (
             f"{provider} doesn't recognize the model '{model}'. "
-            "Try a different model or switch the Fast/Pro toggle."
+            "Try selecting a different model from the list or entering another model ID."
         )
     if code == 429:
         return (

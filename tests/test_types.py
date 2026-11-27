@@ -52,9 +52,11 @@ def test_resolver_substitutes_preset_model_when_default_passed():
     [
         ("openai", "fast", "gpt-5-mini"),
         ("openai", "pro", "gpt-5"),
+        ("anthropic", "fast", "claude-haiku-5-5"),
+        ("anthropic", "pro", "claude-sonnet-5-5"),
         ("gemini", "fast", "gemini-3.8-flash"),
         ("gemini", "pro", "gemini-4-hydrogen"),
-        ("deepseek", "fast", "deepseek-v4-flash"),
+        ("deepseek", "fast", "deepseek-flash"),
         ("deepseek", "pro", "deepseek-v4-pro"),
     ],
 )

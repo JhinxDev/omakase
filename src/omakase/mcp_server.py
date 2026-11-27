@@ -13,6 +13,12 @@ from omakase.adapters.base import list_sources
 from omakase.engine import EmptyHistoryError, RecommendationOutputError
 from omakase.engine import run as run_pipeline
 from omakase.llm import list_backends
+from omakase.llm.catalog import (
+    PROVIDER_CATALOG,
+    ModelDiscoveryError,
+    discover_provider_models,
+    serialize_provider_catalog,
+)
 from omakase.types import DEFAULT_URLS, MODEL_PRESETS, OmakaseConfig, resolve_model_preset
 
 PROTOCOL_VERSION = "2024-11-05"
@@ -25,8 +31,27 @@ TOOLS: list[dict[str, Any]] = [
     },
     {
         "name": "omakase_list_backends",
-        "description": "List supported LLM backends, default endpoints, and Fast/Pro presets.",
+        "description": "List supported LLM backends, default endpoints, starter models, and presets.",
         "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
+    },
+    {
+        "name": "omakase_list_models",
+        "description": "Discover live chat and reasoning models available from a provider.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "llm_type": {
+                    "type": "string",
+                    "description": "Provider name (openai, anthropic, gemini, deepseek, openrouter, openwebui, ollama, lmstudio, groq, together).",
+                },
+                "llm_url": {
+                    "type": "string",
+                    "description": "Optional base URL override (required for openwebui).",
+                },
+            },
+            "required": ["llm_type"],
+            "additionalProperties": False,
+        },
     },
     {
         "name": "omakase_recommend",
@@ -96,8 +121,19 @@ def _call_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
                 "backends": list_backends(),
                 "default_urls": DEFAULT_URLS,
                 "presets": MODEL_PRESETS,
+                "providers": serialize_provider_catalog(),
             }
         )
+
+    if name == "omakase_list_models":
+        llm_type = str(arguments.get("llm_type") or "").strip().lower()
+        if llm_type not in PROVIDER_CATALOG:
+            return _tool_text({"error": f"Unknown llm_type: {llm_type}"}, is_error=True)
+        raw_url = str(arguments.get("llm_url") or DEFAULT_URLS.get(llm_type, "")).strip()
+        try:
+            return _tool_text(discover_provider_models(llm_type, raw_url))
+        except ModelDiscoveryError as exc:
+            return _tool_text({"error": exc.detail}, is_error=True)
 
     if name == "omakase_recommend":
         username = str(arguments.get("username") or "").strip()

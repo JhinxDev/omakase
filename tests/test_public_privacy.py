@@ -115,7 +115,7 @@ def test_hosted_demo_accepts_official_deepseek_provider(monkeypatch):
     payload = _valid_payload() | {
         "llm_type": "deepseek",
         "llm_url": "https://api.deepseek.com",
-        "model": "deepseek-v4-flash",
+        "model": "deepseek-flash",
     }
 
     response = client.post("/api/recommend", json=payload)
@@ -124,7 +124,7 @@ def test_hosted_demo_accepts_official_deepseek_provider(monkeypatch):
     cfg = captured["cfg"]
     assert cfg.llm_type == "deepseek"
     assert cfg.llm_url == "https://api.deepseek.com"
-    assert cfg.model == "deepseek-v4-flash"
+    assert cfg.model == "deepseek-flash"
     assert cfg.supports_json_mode is True
 
 
@@ -187,8 +187,15 @@ def test_hosted_demo_rejects_unapproved_or_insecure_openwebui_instances(monkeypa
     )
 
 
-def test_sync_endpoint_routes_deepseek_pro_to_background_jobs(monkeypatch):
+def test_hosted_demo_accepts_custom_deepseek_model_on_sync_and_jobs(monkeypatch):
     client = _client(monkeypatch)
+    captured = {}
+
+    def fake_run(cfg):
+        captured["model"] = cfg.model
+        return []
+
+    monkeypatch.setattr(server, "run_pipeline", fake_run)
     payload = _valid_payload() | {
         "llm_type": "deepseek",
         "llm_url": "https://api.deepseek.com",
@@ -198,10 +205,8 @@ def test_sync_endpoint_routes_deepseek_pro_to_background_jobs(monkeypatch):
 
     response = client.post("/api/recommend", json=payload)
 
-    assert response.status_code == 400
-    assert response.json()["detail"] == (
-        "DeepSeek Deep runs through the background recommendation endpoint."
-    )
+    assert response.status_code == 200
+    assert captured["model"] == "deepseek-v4-pro"
 
 
 def test_candidate_catalog_failure_is_retryable_and_does_not_blame_the_key(monkeypatch):

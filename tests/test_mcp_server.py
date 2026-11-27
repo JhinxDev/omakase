@@ -23,7 +23,12 @@ def test_mcp_initialize_ping_and_list_tools():
     listed = handle_message({"jsonrpc": "2.0", "id": 3, "method": "tools/list"})
     assert listed is not None
     names = {tool["name"] for tool in listed["result"]["tools"]}
-    assert names == {"omakase_list_sources", "omakase_list_backends", "omakase_recommend"}
+    assert names == {
+        "omakase_list_sources",
+        "omakase_list_backends",
+        "omakase_list_models",
+        "omakase_recommend",
+    }
 
 
 def test_mcp_list_sources_and_backends():
