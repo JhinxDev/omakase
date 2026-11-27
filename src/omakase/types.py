@@ -129,17 +129,17 @@ MODEL_PRESETS: dict[str, dict[str, str]] = {
     "openwebui-fast": {"model": "qwen3:8b", "supports_json": "false"},
     "openwebui-pro": {"model": "qwen3:14b", "supports_json": "false"},
     # Anthropic
-    "anthropic-fast": {"model": "claude-haiku-4-5", "supports_json": "false"},
-    "anthropic-pro": {"model": "claude-sonnet-4-6", "supports_json": "false"},
+    "anthropic-fast": {"model": "claude-haiku-5-5", "supports_json": "false"},
+    "anthropic-pro": {"model": "claude-sonnet-5-5", "supports_json": "false"},
     # Google
     "gemini-fast": {"model": "gemini-3.8-flash", "supports_json": "true"},
     "gemini-pro": {"model": "gemini-4-hydrogen", "supports_json": "true"},
     # DeepSeek
-    "deepseek-fast": {"model": "deepseek-v4-flash", "supports_json": "true"},
+    "deepseek-fast": {"model": "deepseek-flash", "supports_json": "true"},
     "deepseek-pro": {"model": "deepseek-v4-pro", "supports_json": "true"},
     # Aggregators (OpenAI-compatible)
     "openrouter-fast": {"model": "openai/gpt-5-mini", "supports_json": "true"},
-    "openrouter-pro": {"model": "anthropic/claude-sonnet-4.6", "supports_json": "false"},
+    "openrouter-pro": {"model": "anthropic/claude-sonnet-5.5", "supports_json": "false"},
     "groq-fast": {"model": "llama-3.3-70b-versatile", "supports_json": "true"},
     "groq-pro": {"model": "qwen/qwen3-32b", "supports_json": "false"},
     "together-fast": {"model": "meta-llama/Llama-3.3-70B-Instruct-Turbo", "supports_json": "true"},
@@ -151,6 +151,18 @@ MODEL_PRESETS: dict[str, dict[str, str]] = {
 DEFAULT_MODEL_SENTINELS = {"qwen3:8b", "qwen3:14b", "qwen2.5:7b", "qwen2.5:14b"}
 
 
+def _infer_supports_json(llm_type: str, model: str, fallback: bool) -> bool:
+    """Infer whether response_format JSON mode is safe for an explicit model."""
+    if llm_type in {"anthropic", "openwebui"}:
+        return False
+    low = model.lower()
+    if any(tok in low for tok in ("anthropic/", "claude-", "deepseek-reasoner", "deepseek-r1")):
+        return False
+    if llm_type == "openrouter":
+        return fallback and "/" in low and not low.startswith(("anthropic/", "meta-llama/"))
+    return fallback
+
+
 def resolve_model_preset(
     url: str,
     llm_type: str,
@@ -160,8 +172,8 @@ def resolve_model_preset(
     """Resolve a (url, llm_type, model, supports_json) tuple from the chosen preset.
 
     - If `url` is the Ollama default, substitute the canonical URL for the backend.
-    - If `model` is a default sentinel, substitute the preset's model.
-    - `supports_json` always comes from the preset when one exists.
+    - If `model` is a default sentinel or blank, substitute the preset's model.
+    - `supports_json` adapts cleanly for explicit/custom model IDs.
     """
     if url == "http://localhost:11434" and llm_type in DEFAULT_URLS:
         url = DEFAULT_URLS[llm_type]
@@ -171,5 +183,13 @@ def resolve_model_preset(
     if preset is None:
         return url, llm_type, model, True
 
-    resolved_model = preset["model"] if model in DEFAULT_MODEL_SENTINELS else model
-    return url, llm_type, resolved_model, preset["supports_json"] == "true"
+    cleaned_model = model.strip()
+    is_sentinel = not cleaned_model or cleaned_model in DEFAULT_MODEL_SENTINELS
+    resolved_model = preset["model"] if is_sentinel else cleaned_model
+    preset_supports_json = preset["supports_json"] == "true"
+    supports_json = (
+        preset_supports_json
+        if is_sentinel
+        else _infer_supports_json(llm_type, resolved_model, preset_supports_json)
+    )
+    return url, llm_type, resolved_model, supports_json

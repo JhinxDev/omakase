@@ -11,8 +11,9 @@ import click
 from omakase import __version__
 from omakase.adapters.base import list_sources
 from omakase.engine import run
+from omakase.llm.catalog import ModelDiscoveryError, discover_provider_models
 from omakase.output.terminal import show_recommendations
-from omakase.types import OmakaseConfig, resolve_model_preset
+from omakase.types import DEFAULT_URLS, OmakaseConfig, resolve_model_preset
 
 LLM_TYPES = [
     "ollama",
@@ -160,6 +161,34 @@ def backends():
     click.echo("Available LLM backends:")
     for b in list_backends():
         click.echo(f"  - {b}")
+
+
+@cli.command()
+@click.option(
+    "--llm-type",
+    default="openai",
+    type=click.Choice([*LLM_TYPES, "openwebui"]),
+    help="LLM backend type",
+    show_default=True,
+)
+@click.option("--llm-url", default="", help="Optional API base URL override")
+@click.option("--api-key", default="", envvar="OMAKASE_API_KEY", help="Optional provider API key")
+@click.option("--json", "json_output", is_flag=True, help="Output raw JSON")
+def models(llm_type, llm_url, api_key, json_output):
+    """Discover live models from a configured LLM provider."""
+    target_url = llm_url.strip() or DEFAULT_URLS.get(llm_type, "")
+    try:
+        catalog = discover_provider_models(llm_type, target_url, api_key)
+    except ModelDiscoveryError as exc:
+        click.echo(exc.detail, err=True)
+        sys.exit(1)
+    if json_output:
+        click.echo(json.dumps(catalog, indent=2))
+        return
+    click.echo(f"Models for {llm_type} ({len(catalog['models'])}):")
+    for entry in catalog["models"]:
+        free_tag = " [free]" if entry.get("is_free") else ""
+        click.echo(f"  - {entry['id']} ({entry['tier']}{free_tag})")
 
 
 @cli.command()

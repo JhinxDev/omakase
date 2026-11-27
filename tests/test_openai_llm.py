@@ -26,7 +26,7 @@ def _mock_client():
 @pytest.mark.parametrize(
     "model,expected_max_tokens",
     [
-        ("deepseek-v4-flash", 8192),
+        ("deepseek-flash", 8192),
         ("deepseek-v4-pro", 8192),
     ],
 )

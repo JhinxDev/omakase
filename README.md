@@ -12,11 +12,11 @@ Omakase is a stateless, Bring-Your-Own-Key (BYOK) anime sommelier. It pairs your
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
 
-![Omakase Carbon Obsidian counter](docs/images/omakase-counter-v1.webp)
+![Omakase Midnight Izakaya Atelier counter](docs/images/omakase-counter-v2.png)
 
-The web counter uses a Carbon Obsidian (`#09090B`) and Iris Atelier (`#A78BFA`) interface with self-hosted Geist typography. There are no user accounts, no database, and no stored provider keys: every web menu runs purely on the key and history you bring for that request. For a self-hosted anime, movie, and TV library, see [Omakase Plus](https://github.com/JhinxDev/omakase-plus) and its [setup guide](https://omakase-plus.jhinx.dev/docs/quickstart).
+The web counter uses a Midnight Izakaya Atelier (`#0B0A0C` charcoal lacquer, `#E2A35E` lantern amber, and `#E05A47` vermilion seal) interface with self-hosted `Fraunces` display and `Geist` UI typography. There are no user accounts, no database, and no stored provider keys: every web menu runs purely on the key and history you bring for that request. For a self-hosted anime, movie, and TV library, see [Omakase Plus](https://github.com/JhinxDev/omakase-plus) and its [setup guide](https://omakase-plus.jhinx.dev/docs/quickstart).
 
-![Omakase recommendation menu cards with cover art and metadata chips](docs/images/omakase-results-v1.webp)
+![Omakase recommendation menu cards with cover art and metadata chips](docs/images/omakase-results-v2.png)
 
 ## What makes it different
 
@@ -36,7 +36,7 @@ The result is a short tasting menu instead of an endless popularity feed. Each r
 
 The counter has three explicit steps: choose a model provider, add watch history, and shape the menu. You can return to an earlier step before requesting a menu.
 
-The hosted site supports request-local keys for OpenAI, Anthropic, Gemini, DeepSeek, OpenRouter, and owner-approved OpenWebUI instances. Both Quick and Deep model presets run as background jobs, so a slower reasoning model can finish without holding one proxy request open. OpenWebUI asks for the instance URL and the exact model ID shown there. Choose the provider explicitly: several provider keys share similar prefixes, so Omakase routes exclusively to the provider you select.
+The hosted site supports request-local keys for OpenAI, Anthropic, Gemini, DeepSeek, OpenRouter, and owner-approved OpenWebUI instances. Paste your key to query the provider's live `/models` endpoint (or browse OpenRouter's public catalog anytime), filter by speed/reasoning/free tier, or enter any custom model ID directly. Every menu request runs as a background job, so slower reasoning models can finish without holding one proxy request open. OpenWebUI asks for the instance URL and the exact model ID shown there. Choose the provider explicitly: several provider keys share similar prefixes, so Omakase routes exclusively to the provider you select.
 
 Everything stays request-local. Your provider key, history, and taste notes are never written to disk, logs, cookies, or a database, and the key input is cleared as soon as the menu arrives. Your history and notes are sent only to the provider you select so it can generate the menu (that provider's own data policy applies).
 
@@ -117,6 +117,7 @@ Omakase keeps its extension points small. Source adapters normalize watch histor
 | Command | Purpose |
 | --- | --- |
 | `omakase recommend -u <user>` | Prepare a recommendation menu |
+| `omakase models --llm-type <provider>` | Discover live models for a provider |
 | `omakase web` | Start the browser interface |
 | `omakase mcp` | Run the stdio MCP server for AI agents |
 | `omakase init` | Create a starter taste profile |
@@ -127,7 +128,7 @@ Run `omakase recommend --help` for all options. See [CONTRIBUTING.md](CONTRIBUTI
 
 ## MCP server
 
-Run `omakase mcp` to expose three zero-dependency stdio tools (`omakase_list_sources`, `omakase_list_backends`, and `omakase_recommend`) to any MCP-compatible client:
+Run `omakase mcp` to expose four zero-dependency stdio tools (`omakase_list_sources`, `omakase_list_backends`, `omakase_list_models`, and `omakase_recommend`) to any MCP-compatible client:
 
 ```json
 {

@@ -1,4 +1,28 @@
-/* Public Omakase BYOK theme (Carbon Obsidian + Iris Atelier). */
+/* Public Omakase BYOK theme (Midnight Izakaya Atelier). */
+@font-face {
+  font-family: Fraunces;
+  src: url("/static/fraunces-400.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: Fraunces;
+  src: url("/static/fraunces-400-italic.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: Fraunces;
+  src: url("/static/fraunces-500.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+
 @font-face {
   font-family: Geist;
   src: url("/static/geist-variable.woff2") format("woff2");
@@ -9,20 +33,28 @@
 
 :root {
   color-scheme: dark;
-  --public-bg: #09090B;
-  --public-surface: #111216;
-  --public-surface-raised: #181A20;
-  --public-surface-hover: #1E2028;
-  --public-text: #F4F4F5;
-  --public-muted: #A1A1AA;
-  --public-dim: #8A8A96;
-  --public-accent: #A78BFA;
-  --public-accent-soft: rgba(167, 139, 250, 0.12);
-  --public-accent-ink: #140F24;
-  --public-border: rgba(255, 255, 255, 0.09);
-  --public-border-strong: rgba(255, 255, 255, 0.17);
-  --public-focus: #C4B5FD;
-  --public-error: #FDA4AF;
-  --public-success: #6EE7B7;
+  --public-bg: #0B0A0C;
+  --public-surface: #131115;
+  --public-surface-raised: #1B181F;
+  --public-surface-hover: #231F28;
+  --public-text: #F5EFE6;
+  --public-muted: #C8BEB0;
+  --public-dim: #9A8F82;
+  --public-accent: #E2A35E;
+  --public-accent-hover: #EBB57A;
+  --public-accent-soft: rgba(226, 163, 94, 0.13);
+  --public-accent-ink: #171109;
+  --public-vermilion: #E05A47;
+  --public-vermilion-soft: rgba(224, 90, 71, 0.14);
+  --public-border: rgba(245, 239, 230, 0.09);
+  --public-border-strong: rgba(245, 239, 230, 0.17);
+  --public-focus: #F0C28A;
+  --public-error: #F87171;
+  --public-error-soft: rgba(248, 113, 113, 0.11);
+  --public-success: #5FD39E;
+  --public-success-soft: rgba(95, 211, 158, 0.11);
+  --public-display: Fraunces, Georgia, serif;
   --public-font: Geist, "Segoe UI", system-ui, sans-serif;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 }
