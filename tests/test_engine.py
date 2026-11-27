@@ -127,12 +127,14 @@ def test_resolve_urls_enriches_allowlisted_cover_and_metadata():
             studio="Madhouse",
             mean_score=91,
             cover_image="https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/154587.jpg",
+            banner_image="https://s4.anilist.co/file/anilistcdn/media/anime/banner/154587.jpg",
         ),
         MediaItem(
             id=999,
             title_romaji="Untrusted Host Show",
             title_english="Untrusted Host Show",
             cover_image="https://evil.example.invalid/poster.jpg",
+            banner_image="https://evil.example.invalid/banner.jpg",
         ),
     ]
     recs = [_rec("Frieren: Beyond Journey's End"), _rec("Untrusted Host Show")]
@@ -140,12 +142,16 @@ def test_resolve_urls_enriches_allowlisted_cover_and_metadata():
     assert recs[0].cover_image == (
         "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/154587.jpg"
     )
+    assert recs[0].banner_image == (
+        "https://s4.anilist.co/file/anilistcdn/media/anime/banner/154587.jpg"
+    )
     assert recs[0].genres == ["Adventure", "Drama", "Fantasy"]
     assert recs[0].episodes == 28
     assert recs[0].format == "TV"
     assert recs[0].studio == "Madhouse"
     assert recs[0].mean_score == 91
     assert recs[1].cover_image is None
+    assert recs[1].banner_image is None
 
 
 def test_exclude_feedback_candidates_matches_english_and_romaji_titles():

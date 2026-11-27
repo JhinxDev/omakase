@@ -124,7 +124,8 @@ class AniListAdapter(SourceAdapter):
               description(asHtml: false)
               format
               episodes
-              coverImage { large }
+              coverImage { extraLarge large }
+              bannerImage
               studios(isMain: true) { nodes { name } }
             }
           }
@@ -146,6 +147,7 @@ class AniListAdapter(SourceAdapter):
                 desc = m.get("description", "")
                 if desc and len(desc) > 200:
                     desc = desc[:200] + "..."
+                cover = m.get("coverImage") or {}
                 items.append(
                     MediaItem(
                         id=m["id"],
@@ -158,7 +160,8 @@ class AniListAdapter(SourceAdapter):
                         studio=studio,
                         description=desc,
                         mean_score=m.get("meanScore"),
-                        cover_image=safe_cover_url(m.get("coverImage", {}).get("large")),
+                        cover_image=safe_cover_url(cover.get("extraLarge") or cover.get("large")),
+                        banner_image=safe_cover_url(m.get("bannerImage")),
                     )
                 )
             page += 1
@@ -181,7 +184,8 @@ class AniListAdapter(SourceAdapter):
                   description(asHtml: false)
                   format
                   episodes
-                  coverImage { large }
+                  coverImage { extraLarge large }
+                  bannerImage
                   studios(isMain: true) { nodes { name } }
                 }
               }
@@ -205,6 +209,7 @@ class AniListAdapter(SourceAdapter):
                 desc = media.get("description", "")
                 if desc and len(desc) > 200:
                     desc = desc[:200] + "..."
+                cover = media.get("coverImage") or {}
                 items.append(
                     MediaItem(
                         id=media["id"],
@@ -217,7 +222,8 @@ class AniListAdapter(SourceAdapter):
                         studio=studio,
                         description=desc,
                         mean_score=media.get("meanScore"),
-                        cover_image=safe_cover_url(media.get("coverImage", {}).get("large")),
+                        cover_image=safe_cover_url(cover.get("extraLarge") or cover.get("large")),
+                        banner_image=safe_cover_url(media.get("bannerImage")),
                     )
                 )
         return items

@@ -202,6 +202,7 @@ def _call_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
                         "url": r.url,
                         "source": r.source,
                         "cover_image": r.cover_image,
+                        "banner_image": r.banner_image,
                         "genres": r.genres,
                         "episodes": r.episodes,
                         "format": r.format,

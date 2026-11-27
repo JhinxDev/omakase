@@ -4,6 +4,12 @@ All notable changes to Omakase are documented in this file.
 
 ## Unreleased
 
+## 2.1.0 - 2026-11-27
+
+- **Real colored brand logos**: replaced generic line icons with bundled local official brand SVGs (`openai.svg`, `anthropic.svg`, `gemini.svg`, `deepseek.svg`, `openrouter.svg`, `openwebui.svg`, `anilist.svg`, `myanimelist.svg`) inside tinted brand badges.
+- **Anime banners & prominent poster cards**: enriched AniList candidate queries and best-effort artwork backfill with `bannerImage` and `extraLarge` `coverImage`, and redesigned result cards with atmospheric top banner backdrops, overlaid pick/score badges, and prominent overlapping anime posters.
+- **Current late-2026 model lineup & live catalog cleanup**: updated curated defaults to `gpt-6-luna` / `gpt-6.2-sol` / `gpt-6.2-astra`, `claude-haiku-5-5` / `claude-sonnet-5-5` / `claude-opus-5-5` / `claude-fable-5-2`, `gemini-3.8-flash` / `gemini-4-hydrogen` / `gemini-4-neon`, and `deepseek-flash` / `deepseek-v4-pro`; stripped `:batch` endpoints from OpenRouter discovery and sorted live catalogs by newest `created` timestamp first.
+
 ## 2.0.0 - 2026-11-27
 
 - **Midnight Izakaya Atelier UI**: complete redesign of the public counter and tasting menu onto a warm charcoal lacquer (`#0B0A0C`) and lantern amber (`#E2A35E`) visual system with self-hosted `Fraunces` display + `Geist` UI typography, crisp inline SVG provider and list-source logos, a live preparation tasting slip, taste-note starter chips, and one-click Markdown menu copy.
