@@ -28,3 +28,20 @@ def test_generated_atelier_art_is_present():
 
     assert art.is_file()
     assert art.stat().st_size > 100_000
+
+
+def test_provider_and_source_brand_logos_are_served():
+    for name in (
+        "openai.svg",
+        "anthropic.svg",
+        "gemini.svg",
+        "deepseek.svg",
+        "openrouter.svg",
+        "openwebui.svg",
+        "anilist.svg",
+        "myanimelist.svg",
+    ):
+        resp = client.get(f"/static/logos/{name}")
+        assert resp.status_code == 200
+        assert resp.headers["content-type"].startswith("image/svg+xml")
+        assert "<svg" in resp.text

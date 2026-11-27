@@ -43,6 +43,8 @@ const picks = [
     best_match_from_history: "Mushishi",
     predicted_score: 9.1,
     url: "https://anilist.co/anime/154587/",
+    cover_image: "https://s4.anilist.co/qa/frieren-poster.svg",
+    banner_image: "https://s4.anilist.co/qa/frieren-banner.svg",
     genres: ["Adventure", "Drama", "Fantasy"],
     episodes: 28,
     format: "TV",
@@ -56,6 +58,8 @@ const picks = [
     best_match_from_history: "Code Geass: Lelouch of the Rebellion",
     predicted_score: 8.4,
     url: "https://anilist.co/anime/8888/",
+    cover_image: "https://s4.anilist.co/qa/geass-poster.svg",
+    banner_image: "https://s4.anilist.co/qa/geass-banner.svg",
     genres: ["Action", "Mecha"],
     episodes: 5,
     format: "OVA",
@@ -69,6 +73,9 @@ const picks = [
     url: "javascript:alert(1)",
   },
 ];
+
+const syntheticPosterSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 340"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#2a2230"/><stop offset="100%" stop-color="#131115"/></linearGradient></defs><rect width="240" height="340" fill="url(#g)"/><circle cx="120" cy="120" r="54" fill="#E2A35E" opacity="0.25"/></svg>`;
+const syntheticBannerSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320"><defs><linearGradient id="b" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#1d1826"/><stop offset="50%" stop-color="#302420"/><stop offset="100%" stop-color="#151218"/></linearGradient></defs><rect width="1200" height="320" fill="url(#b)"/></svg>`;
 
 const receipt = {
   checks: [],
@@ -136,6 +143,12 @@ for (const name of ["server.py", "templates/index.html"]) {
       await page.route("**/*", async (route) => {
         const req = route.request();
         const url = new URL(req.url());
+        if (url.origin === "https://s4.anilist.co" && url.pathname.startsWith("/qa/")) {
+          return route.fulfill({
+            contentType: "image/svg+xml",
+            body: url.pathname.includes("banner") ? syntheticBannerSvg : syntheticPosterSvg,
+          });
+        }
         if (url.origin !== "http://public.test") {
           receipt.unexpected.push(url.origin);
           return route.abort();
@@ -160,11 +173,11 @@ for (const name of ["server.py", "templates/index.html"]) {
                 source: "live_public",
                 key_verified: false,
                 models: [
-                  { id: "openai/gpt-5-mini", name: "OpenAI: GPT-5 mini", tier: "fast", context_length: 400000, is_free: false },
-                  { id: "anthropic/claude-sonnet-5.5", name: "Anthropic: Claude Sonnet 5.5", tier: "balanced", context_length: 200000, is_free: false },
-                  { id: "deepseek/deepseek-v4-pro", name: "DeepSeek: V4 Pro", tier: "reasoning", context_length: 1000000, is_free: false },
+                  { id: "openai/gpt-6.2-sol", name: "OpenAI: GPT-6.2 Sol", tier: "balanced", context_length: 1050000, is_free: false },
+                  { id: "anthropic/claude-sonnet-5.5", name: "Anthropic: Claude Sonnet 5.5", tier: "balanced", context_length: 1000000, is_free: false },
+                  { id: "deepseek/deepseek-v4-pro", name: "DeepSeek: V4 Pro", tier: "reasoning", context_length: 1048576, is_free: false },
                   { id: "meta-llama/llama-3.3-70b-instruct:free", name: "Llama 3.3 70B Free", tier: "fast", context_length: 131072, is_free: true },
-                  { id: "google/gemini-3.8-flash", name: "Google: Gemini 3.8 Flash", tier: "fast", context_length: 1048576, is_free: false },
+                  { id: "google/gemini-4-hydrogen", name: "Google: Gemini 4 Hydrogen", tier: "balanced", context_length: 1048576, is_free: false },
                   { id: "qwen/qwen3-32b", name: "Qwen 3 32B", tier: "balanced", context_length: 131072, is_free: false },
                 ],
               },
@@ -177,9 +190,9 @@ for (const name of ["server.py", "templates/index.html"]) {
               source: "live",
               key_verified: true,
               models: [
-                { id: "gpt-5-mini", name: "GPT-5 mini", tier: "fast", context_length: 400000, is_free: false },
-                { id: "gpt-6.2-astra", name: "GPT-6.2 Astra", tier: "flagship", context_length: 1000000, is_free: false },
-                { id: "gpt-5-pro", name: "GPT-5 Pro", tier: "reasoning", context_length: 400000, is_free: false },
+                { id: "gpt-6-luna", name: "GPT-6 Luna", tier: "fast", context_length: 1050000, is_free: false },
+                { id: "gpt-6.2-astra", name: "GPT-6.2 Astra", tier: "flagship", context_length: 1050000, is_free: false },
+                { id: "gpt-6.2-astra-pro", name: "GPT-6.2 Astra Pro", tier: "reasoning", context_length: 1050000, is_free: false },
               ],
             },
           });
@@ -261,7 +274,9 @@ for (const name of ["server.py", "templates/index.html"]) {
           bg: getComputedStyle(document.body).backgroundColor,
           font: getComputedStyle(document.body).fontFamily,
           displayFont: getComputedStyle(document.querySelector("h1")).fontFamily,
-          logoCount: document.querySelectorAll(".choice-card__logo svg").length,
+          logoCount: [...document.querySelectorAll(".choice-card__logo img")].filter(
+            (img) => img.complete && img.naturalWidth > 0,
+          ).length,
           small: [
             ...document.querySelectorAll(
               ".field__hint,.choice-card small,.course-nav__item small,.result-menu-label",
@@ -404,6 +419,8 @@ for (const name of ["server.py", "templates/index.html"]) {
       await page.locator("#run-btn").click();
       await page.locator("#results-list .recommendation").first().waitFor({ state: "visible" });
       assert.equal(await page.locator(".recommendation").count(), 3);
+      assert.equal(await page.locator(".recommendation__cover").count(), 2);
+      assert.equal(await page.locator(".recommendation__banner-img").count(), 2);
       assert.equal(await page.locator("#api_key").inputValue(), "");
       assert((await page.locator(".recommendation").nth(2).innerText()).includes("Not provided"));
       assert.equal(await page.locator(".recommendation").nth(2).locator(".recommendation__link").count(), 0);

@@ -125,10 +125,27 @@ def test_discover_anthropic_and_openrouter_free_flags():
                 "architecture": {"output_modalities": ["text"]},
             },
             {
-                "id": "openai/gpt-5-mini",
-                "name": "OpenAI: GPT-5 mini",
-                "context_length": 400000,
+                "id": "openai/gpt-6.2-astra:batch",
+                "name": "OpenAI: GPT-6.2 Astra (batch)",
+                "context_length": 1050000,
+                "created": 1794938423,
+                "pricing": {"prompt": "0.000002", "completion": "0.00001"},
+                "architecture": {"output_modalities": ["text"]},
+            },
+            {
+                "id": "openai/gpt-6.2-sol",
+                "name": "OpenAI: GPT-6.2 Sol",
+                "context_length": 1050000,
+                "created": 1794938371,
                 "pricing": {"prompt": "0.00000025", "completion": "0.000002"},
+                "architecture": {"output_modalities": ["text"]},
+            },
+            {
+                "id": "google/gemini-4-neon",
+                "name": "Google: Gemini 4 Neon",
+                "context_length": 1048576,
+                "created": 1795006977,
+                "pricing": {"prompt": "0.000001", "completion": "0.000004"},
                 "architecture": {"output_modalities": ["text"]},
             },
         ]
@@ -141,6 +158,9 @@ def test_discover_anthropic_and_openrouter_free_flags():
         or_result = discover_provider_models("openrouter", "https://openrouter.ai/api", "or-key")
     assert or_result["source"] == "live"
     assert or_result["key_verified"] is True
+    ids = [m["id"] for m in or_result["models"]]
+    assert "openai/gpt-6.2-astra:batch" not in ids
+    assert ids[0] == "openai/gpt-6.2-sol"
     free_entry = next(
         m for m in or_result["models"] if m["id"] == "meta-llama/llama-3.3-70b-instruct:free"
     )

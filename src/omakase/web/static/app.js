@@ -9,10 +9,10 @@ const PROVIDERS = {
     hint: "Create or manage an API key in your OpenAI Platform account.",
     publicCatalog: false,
     starters: [
-      { id: "gpt-5-mini", name: "GPT-5 mini", tier: "fast" },
-      { id: "gpt-5", name: "GPT-5", tier: "balanced" },
+      { id: "gpt-6-luna", name: "GPT-6 Luna", tier: "fast" },
+      { id: "gpt-6.2-sol", name: "GPT-6.2 Sol", tier: "balanced" },
       { id: "gpt-6.2-astra", name: "GPT-6.2 Astra", tier: "flagship" },
-      { id: "gpt-5-pro", name: "GPT-5 Pro", tier: "reasoning" },
+      { id: "gpt-6.2-astra-pro", name: "GPT-6.2 Astra Pro", tier: "reasoning" },
     ],
   },
   anthropic: {
@@ -23,7 +23,8 @@ const PROVIDERS = {
     starters: [
       { id: "claude-haiku-5-5", name: "Claude Haiku 5.5", tier: "fast" },
       { id: "claude-sonnet-5-5", name: "Claude Sonnet 5.5", tier: "balanced" },
-      { id: "claude-opus-5-5", name: "Claude Opus 5.5", tier: "reasoning" },
+      { id: "claude-opus-5-5", name: "Claude Opus 5.5", tier: "flagship" },
+      { id: "claude-fable-5-2", name: "Claude Fable 5.2", tier: "reasoning" },
     ],
   },
   gemini: {
@@ -54,10 +55,12 @@ const PROVIDERS = {
     hint: "Browse OpenRouter models anytime; paste a key to verify and cook.",
     publicCatalog: true,
     starters: [
-      { id: "openai/gpt-5-mini", name: "OpenAI: GPT-5 mini", tier: "fast" },
+      { id: "openai/gpt-6.2-sol", name: "OpenAI: GPT-6.2 Sol", tier: "balanced" },
       { id: "anthropic/claude-sonnet-5.5", name: "Anthropic: Claude Sonnet 5.5", tier: "balanced" },
-      { id: "google/gemini-3.8-flash", name: "Google: Gemini 3.8 Flash", tier: "fast" },
-      { id: "deepseek/deepseek-v4-pro", name: "DeepSeek: V4 Pro", tier: "reasoning" },
+      { id: "google/gemini-4-hydrogen", name: "Google: Gemini 4 Hydrogen", tier: "balanced" },
+      { id: "deepseek/deepseek-v4.1-flash", name: "DeepSeek: DeepSeek V4.1 Flash", tier: "fast" },
+      { id: "openai/gpt-6.2-astra", name: "OpenAI: GPT-6.2 Astra", tier: "flagship" },
+      { id: "google/gemini-4-neon", name: "Google: Gemini 4 Neon", tier: "reasoning" },
     ],
   },
   openwebui: {
@@ -876,10 +879,74 @@ function displayResults(data) {
     lastRecommendations.forEach((recommendation, index) => {
       const article = document.createElement("article");
       const coverUrl = urlSafety.safeCoverUrl(recommendation.cover_image);
-      article.className = coverUrl ? "recommendation recommendation--with-cover" : "recommendation";
+      const bannerUrl = urlSafety.safeCoverUrl(recommendation.banner_image);
+      article.className = "recommendation";
+
+      const banner = document.createElement("div");
+      banner.className = "recommendation__banner";
+      const backdropSrc = bannerUrl || coverUrl;
+      if (backdropSrc) {
+        const bannerImg = document.createElement("img");
+        bannerImg.className = bannerUrl
+          ? "recommendation__banner-img"
+          : "recommendation__banner-img recommendation__banner-img--soft";
+        bannerImg.src = backdropSrc;
+        bannerImg.alt = "";
+        bannerImg.loading = "lazy";
+        bannerImg.referrerPolicy = "no-referrer";
+        bannerImg.addEventListener("error", () => {
+          bannerImg.remove();
+        });
+        banner.appendChild(bannerImg);
+      }
+
+      const bannerScrim = document.createElement("div");
+      bannerScrim.className = "recommendation__banner-scrim";
+      bannerScrim.setAttribute("aria-hidden", "true");
+      banner.appendChild(bannerScrim);
 
       const number = createText("span", "recommendation__number", String(index + 1).padStart(2, "0"));
       number.setAttribute("aria-label", `Pick ${index + 1}`);
+
+      const score = document.createElement("div");
+      score.className = "recommendation__score";
+      const fit = predictedFit(recommendation);
+      score.append(
+        createText("span", "result-menu-label", "Predicted fit"),
+        createText("strong", "", fit === null ? "Not provided" : fit),
+        createText("span", "recommendation__score-unit", fit === null ? "" : "/ 10"),
+      );
+      banner.append(number, score);
+      article.appendChild(banner);
+
+      const content = document.createElement("div");
+      content.className = "recommendation__content";
+
+      const posterFrame = document.createElement("div");
+      posterFrame.className = "recommendation__poster";
+      if (coverUrl) {
+        const cover = document.createElement("img");
+        cover.className = "recommendation__cover";
+        cover.src = coverUrl;
+        cover.alt = `${recommendation.title} poster`;
+        cover.loading = "lazy";
+        cover.referrerPolicy = "no-referrer";
+        cover.addEventListener("error", () => {
+          cover.remove();
+          posterFrame.classList.add("recommendation__poster--fallback");
+          posterFrame.appendChild(
+            createText("span", "", (recommendation.title || "?").trim().charAt(0).toUpperCase()),
+          );
+        });
+        posterFrame.appendChild(cover);
+      } else {
+        posterFrame.classList.add("recommendation__poster--fallback");
+        posterFrame.setAttribute("aria-hidden", "true");
+        posterFrame.appendChild(
+          createText("span", "", (recommendation.title || "?").trim().charAt(0).toUpperCase()),
+        );
+      }
+
       const body = document.createElement("div");
       body.className = "recommendation__body";
       body.appendChild(createText("h3", "recommendation__title", recommendation.title));
@@ -891,33 +958,11 @@ function displayResults(data) {
       );
       const match = document.createElement("p");
       match.className = "recommendation__match";
-      match.append(createText("span", "result-menu-label", "History pairing"), createText("strong", "", recommendationPairing(recommendation)));
-      body.appendChild(match);
-
-      const score = document.createElement("div");
-      score.className = "recommendation__score";
-      const fit = predictedFit(recommendation);
-      score.append(
-        createText("span", "result-menu-label", "Predicted fit"),
-        createText("strong", "", fit === null ? "Not provided" : fit),
-        createText("span", "", fit === null ? "" : "/ 10 model estimate"),
+      match.append(
+        createText("span", "result-menu-label", "History pairing"),
+        createText("strong", "", recommendationPairing(recommendation)),
       );
-
-      if (coverUrl) {
-        const cover = document.createElement("img");
-        cover.className = "recommendation__cover";
-        cover.src = coverUrl;
-        cover.alt = "";
-        cover.loading = "lazy";
-        cover.referrerPolicy = "no-referrer";
-        cover.addEventListener("error", () => {
-          cover.remove();
-          article.classList.remove("recommendation--with-cover");
-        });
-        article.append(number, cover, body, score);
-      } else {
-        article.append(number, body, score);
-      }
+      body.appendChild(match);
 
       const actions = document.createElement("div");
       actions.className = "recommendation__actions";
@@ -932,8 +977,10 @@ function displayResults(data) {
       }
       const compareControl = comparison?.addControl(index);
       if (compareControl) actions.appendChild(compareControl);
-      if (actions.childNodes.length) article.appendChild(actions);
+      if (actions.childNodes.length) body.appendChild(actions);
 
+      content.append(posterFrame, body);
+      article.appendChild(content);
       list.appendChild(article);
     });
   }

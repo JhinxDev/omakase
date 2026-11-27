@@ -43,6 +43,7 @@ class MediaItem:
     description: str | None = None  # only for candidates
     mean_score: float | None = None  # global average score
     cover_image: str | None = None
+    banner_image: str | None = None
 
 
 @dataclass
@@ -56,6 +57,7 @@ class Recommendation:
     url: str | None = None
     source: str | None = None
     cover_image: str | None = None
+    banner_image: str | None = None
     genres: list[str] = field(default_factory=list)
     episodes: int | None = None
     format: str | None = None
@@ -123,8 +125,8 @@ MODEL_PRESETS: dict[str, dict[str, str]] = {
     "lmstudio-fast": {"model": "qwen3-8b", "supports_json": "true"},
     "lmstudio-pro": {"model": "qwen3-14b", "supports_json": "true"},
     # OpenAI
-    "openai-fast": {"model": "gpt-5-mini", "supports_json": "true"},
-    "openai-pro": {"model": "gpt-5", "supports_json": "true"},
+    "openai-fast": {"model": "gpt-6-luna", "supports_json": "true"},
+    "openai-pro": {"model": "gpt-6.2-astra", "supports_json": "true"},
     # OpenWebUI can front models with different structured-output support.
     "openwebui-fast": {"model": "qwen3:8b", "supports_json": "false"},
     "openwebui-pro": {"model": "qwen3:14b", "supports_json": "false"},
@@ -138,7 +140,7 @@ MODEL_PRESETS: dict[str, dict[str, str]] = {
     "deepseek-fast": {"model": "deepseek-flash", "supports_json": "true"},
     "deepseek-pro": {"model": "deepseek-v4-pro", "supports_json": "true"},
     # Aggregators (OpenAI-compatible)
-    "openrouter-fast": {"model": "openai/gpt-5-mini", "supports_json": "true"},
+    "openrouter-fast": {"model": "openai/gpt-6.2-sol", "supports_json": "true"},
     "openrouter-pro": {"model": "anthropic/claude-sonnet-5.5", "supports_json": "false"},
     "groq-fast": {"model": "llama-3.3-70b-versatile", "supports_json": "true"},
     "groq-pro": {"model": "qwen/qwen3-32b", "supports_json": "false"},

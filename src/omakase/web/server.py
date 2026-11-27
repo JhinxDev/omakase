@@ -77,6 +77,7 @@ def _asset_version() -> str:
         _HERE / "static" / "url_safety.js",
         _HERE / "static" / "omakase-mark.svg",
         _HERE / "static" / "favicon.svg",
+        _HERE / "static" / "logos" / "openai.svg",
         _HERE / "static" / "fraunces-400.woff2",
         _HERE / "static" / "generated" / "omakase-atelier.webp",
     )
@@ -216,6 +217,7 @@ class RecommendationOut(BaseModel):
     url: str | None = None
     source: str | None = None
     cover_image: str | None = None
+    banner_image: str | None = None
     genres: list[str] = []
     episodes: int | None = None
     format: str | None = None
@@ -523,6 +525,7 @@ def _recommendations_out(recs) -> list[RecommendationOut]:
             url=rec.url,
             source=rec.source,
             cover_image=rec.cover_image,
+            banner_image=rec.banner_image,
             genres=list(rec.genres or []),
             episodes=rec.episodes,
             format=rec.format,

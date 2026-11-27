@@ -55,14 +55,14 @@ def test_mcp_list_sources_and_backends():
     assert backend_resp is not None
     backend_payload = json.loads(backend_resp["result"]["content"][0]["text"])
     assert "openai" in backend_payload["backends"]
-    assert backend_payload["presets"]["openai-fast"]["model"] == "gpt-5-mini"
+    assert backend_payload["presets"]["openai-fast"]["model"] == "gpt-6-luna"
 
 
 def test_mcp_recommend_calls_pipeline_and_returns_enriched_json(monkeypatch):
     def fake_run(cfg):
         assert cfg.username == "demo-user"
         assert cfg.llm_type == "openai"
-        assert cfg.model == "gpt-5-mini"
+        assert cfg.model == "gpt-6-luna"
         return [
             Recommendation(
                 title="Mushishi",

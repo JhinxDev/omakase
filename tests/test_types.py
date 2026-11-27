@@ -50,8 +50,8 @@ def test_resolver_substitutes_preset_model_when_default_passed():
 @pytest.mark.parametrize(
     "backend,mode,expected_model",
     [
-        ("openai", "fast", "gpt-5-mini"),
-        ("openai", "pro", "gpt-5"),
+        ("openai", "fast", "gpt-6-luna"),
+        ("openai", "pro", "gpt-6.2-astra"),
         ("anthropic", "fast", "claude-haiku-5-5"),
         ("anthropic", "pro", "claude-sonnet-5-5"),
         ("gemini", "fast", "gemini-3.8-flash"),
@@ -76,7 +76,7 @@ def test_resolver_uses_current_cloud_models(backend, mode, expected_model):
 
 def test_resolver_accepts_legacy_default_sentinel():
     _, _, model, _ = resolve_model_preset(OLLAMA_DEFAULT, "openai", "qwen2.5:7b", "fast")
-    assert model == "gpt-5-mini"
+    assert model == "gpt-6-luna"
 
 
 def test_resolver_keeps_user_model_when_explicit():
