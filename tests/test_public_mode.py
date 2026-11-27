@@ -40,6 +40,25 @@ def test_public_mode_promotes_byok_and_has_no_accounts(monkeypatch):
     assert 'id="openwebui_model"' in response.text
     assert "—" not in response.text
     assert "/static/url_safety.js?v=" in response.text
+    assert "/static/favicon.svg?v=" in response.text
+    assert "/static/omakase-mark.svg?v=" in response.text
+    assert 'class="field-guide__card"' in response.text
+    field_guide_slice = response.text.split('id="field-guide"', 1)[1].split("</section>", 1)[0]
+    assert "<details" not in field_guide_slice
+    lower_html = response.text.lower()
+    for hardcoded in (
+        "gpt-5",
+        "gpt-6",
+        "gemini-3",
+        "gemini-4",
+        "claude-haiku",
+        "claude-sonnet",
+        "claude-opus",
+        "claude-fable",
+        "deepseek-v4",
+        "llama3.1",
+    ):
+        assert hardcoded not in lower_html, f"Found hardcoded model reference: {hardcoded}"
     assert 'name="provider_credential"' in response.text
     assert 'class="masked-credential"' in response.text
     assert 'name="provider_credential"\n                    type="password"' not in response.text

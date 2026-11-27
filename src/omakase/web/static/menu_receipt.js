@@ -34,7 +34,7 @@
     function update() {
       const provider = selected("provider") || "openai";
       const providerLabel = labels[provider] || "Provider";
-      const activeModel = field("model")?.value.trim() || "choose model";
+      const activeModel = field("model")?.value.trim() || "load or enter model";
       const keyPresent = present("api_key");
       let modelMissing = !keyPresent || !present("model");
 

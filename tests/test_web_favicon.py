@@ -12,7 +12,9 @@ def test_home_links_static_favicon():
     response = client.get("/")
 
     assert response.status_code == 200
-    assert '<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">' in response.text
+    assert 'rel="icon"' in response.text
+    assert "/static/favicon.svg?v=" in response.text
+    assert "/static/omakase-mark.svg?v=" in response.text
 
 
 def test_favicon_ico_compat_route_serves_svg():

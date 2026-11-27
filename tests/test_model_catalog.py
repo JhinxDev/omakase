@@ -10,7 +10,11 @@ from fastapi.testclient import TestClient
 
 from omakase.cli import cli
 from omakase.engine import _parse_recommendations
-from omakase.llm.catalog import discover_provider_models, reset_openrouter_cache
+from omakase.llm.catalog import (
+    discover_provider_models,
+    reset_openrouter_cache,
+    serialize_provider_catalog,
+)
 from omakase.llm.gemini import GeminiLLM
 from omakase.llm.openai import OpenAILLM
 from omakase.mcp_server import handle_message
@@ -93,9 +97,18 @@ def test_discover_gemini_filters_non_text_models_and_strips_prefix():
         )
 
     ids = [m["id"] for m in result["models"]]
-    assert ids == ["gemini-3.8-flash", "gemini-4-neon"]
+    assert ids == ["gemini-4-neon", "gemini-3.8-flash"]
     assert result["models"][0]["context_length"] == 1048576
     assert client.get.call_args.kwargs["headers"]["x-goog-api-key"] == "gem-key"
+
+
+def test_hosted_catalog_has_no_hardcoded_starters_or_versioned_taglines():
+    catalog = serialize_provider_catalog(hosted_only=True)
+    for pid, meta in catalog.items():
+        assert meta["starters"] == [], f"{pid} should not expose hardcoded starter models"
+        low_tag = meta["tagline"].lower()
+        for token in ("gpt-5", "gpt-6", "claude 4", "claude 5", "fable", "3.8", "v4", "4.", "5."):
+            assert token not in low_tag, f"{pid} tagline contains versioned token {token}"
 
 
 def test_discover_anthropic_and_openrouter_free_flags():
@@ -160,7 +173,7 @@ def test_discover_anthropic_and_openrouter_free_flags():
     assert or_result["key_verified"] is True
     ids = [m["id"] for m in or_result["models"]]
     assert "openai/gpt-6.2-astra:batch" not in ids
-    assert ids[0] == "openai/gpt-6.2-sol"
+    assert ids[0] == "google/gemini-4-neon"
     free_entry = next(
         m for m in or_result["models"] if m["id"] == "meta-llama/llama-3.3-70b-instruct:free"
     )

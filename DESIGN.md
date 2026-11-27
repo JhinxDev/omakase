@@ -1,6 +1,6 @@
-# Public Omakase design contract (v2.1.0: Midnight Izakaya Atelier)
+# Public Omakase design contract (v2.2.0: Midnight Izakaya Atelier)
 
-Updated November 27, 2026: added bundled real colored official brand logos (`src/omakase/web/static/logos/`), anime banner + overlapping poster cards, and current late-2026 model presets (`gpt-6-luna` / `gpt-6.2-sol` / `gpt-6.2-astra`, `claude-haiku-5-5` / `claude-sonnet-5-5` / `claude-opus-5-5` / `claude-fable-5-2`, `gemini-3.8-flash` / `gemini-4-hydrogen` / `gemini-4-neon`, `deepseek-flash` / `deepseek-v4-pro`).
+Updated November 27, 2026: removed all hardcoded model names and static starter lists from the web UI in favor of evergreen live `/api/providers/models` discovery, redesigned `#field-guide` into an always-visible 2x2 editorial card grid, and added `?v={{ asset_version }}` cache-busting to vector marks and hero artwork.
 
 ## Tokens & Typography
 
@@ -10,7 +10,8 @@ Updated November 27, 2026: added bundled real colored official brand logos (`src
 
 ## Counter, Live Model Discovery & Result Menu
 
-- Three explicit courses: Model (colored provider logos, request-local API key, live `/api/providers/models` catalog with `All / Fast / Balanced / Reasoning / Free` filter pills, search, and custom model ID), History (AniList username or in-memory MyAnimeList XML/GZ export, optional Plan to Watch filter), and Taste (clickable starter chips, notes, or scores-only toggle).
+- Three explicit courses: Model (colored provider logos with timeless subtitles, request-local API key, live `/api/providers/models` catalog sorted dynamically by newest release timestamp and version descending, `All / Fast / Balanced / Reasoning / Free` filter pills hidden until models load, search, and custom model ID), History (AniList username or in-memory MyAnimeList XML/GZ export, optional Plan to Watch filter), and Taste (clickable starter chips, notes, or scores-only toggle).
 - Sticky Tasting Slip (`menu_receipt.js`) mirrors current provider, model, key status, history, taste brief, and scope in memory without persistence or secret exposure.
 - Returned tasting menu cards (`.recommendation`) feature an atmospheric anime banner backdrop (falling back to a soft blurred poster wash when no banner exists), an overlapping prominent anime poster (`116x168px` desktop, `s4.anilist.co` / `cdn.myanimelist.net` allowlisted in backend + CSP), Fraunces title, format/episode/studio/genre badges, reasoning, history pairing, predicted fit badge, side-by-side compare (`Compare this pick` up to 2 items), and Markdown copy (`Copy menu`).
+- Field Guide (`#field-guide`) renders a balanced 2x2 editorial grid of always-visible `.field-guide__card` blocks without stretched disclosures.
 - All guest API keys, watch history, and taste notes remain strictly request-local: held in memory for one request, cleared from the browser input on menu completion, and scrubbed in backend `finally` cleanup without accounts, cookies, keyrings, or database storage.
