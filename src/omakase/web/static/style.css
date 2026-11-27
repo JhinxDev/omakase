@@ -730,25 +730,70 @@ fieldset > legend,
 .choice-card__logo {
   display: grid;
   place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.65rem;
+  height: 2.65rem;
   border: 1px solid var(--line-strong);
   border-radius: 10px;
   background: var(--surface-raised);
-  color: var(--paper);
-  transition: border-color 140ms var(--ease-out), color 140ms var(--ease-out), background-color 140ms var(--ease-out);
+  transition: border-color 140ms var(--ease-out), background-color 140ms var(--ease-out), transform 140ms var(--ease-out);
+}
+
+.choice-card__logo--openai {
+  background: #10A37F;
+  border-color: rgba(16, 163, 127, 0.75);
+}
+
+.choice-card__logo--anthropic {
+  background: rgba(217, 119, 87, 0.16);
+  border-color: rgba(217, 119, 87, 0.4);
+}
+
+.choice-card__logo--gemini {
+  background: rgba(71, 150, 227, 0.15);
+  border-color: rgba(145, 119, 199, 0.4);
+}
+
+.choice-card__logo--deepseek {
+  background: rgba(77, 107, 254, 0.16);
+  border-color: rgba(77, 107, 254, 0.42);
+}
+
+.choice-card__logo--openrouter {
+  background: rgba(129, 140, 248, 0.16);
+  border-color: rgba(129, 140, 248, 0.4);
+}
+
+.choice-card__logo--openwebui {
+  background: #1E2430;
+  border-color: rgba(245, 239, 230, 0.2);
 }
 
 .choice-card.is-selected .choice-card__logo {
-  border-color: rgba(226, 163, 94, 0.45);
-  background: rgba(226, 163, 94, 0.16);
-  color: var(--amber-hover);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 
-.choice-card__logo svg {
-  width: 20px;
-  height: 20px;
+.choice-card__logo img {
+  width: 22px;
+  height: 22px;
   display: block;
+  object-fit: contain;
+}
+
+.source-switch__icon--anilist {
+  background: rgba(2, 169, 255, 0.14);
+  border: 1px solid rgba(2, 169, 255, 0.35);
+}
+
+.source-switch__icon--mal {
+  background: rgba(79, 125, 243, 0.16);
+  border: 1px solid rgba(79, 125, 243, 0.38);
+}
+
+.source-switch__icon img {
+  width: 18px;
+  height: 18px;
+  display: block;
+  object-fit: contain;
 }
 
 .choice-card strong,

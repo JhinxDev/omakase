@@ -48,7 +48,7 @@ PROVIDER_CATALOG: dict[str, ProviderDescriptor] = {
     "openai": ProviderDescriptor(
         id="openai",
         label="OpenAI",
-        tagline="Reliable flagship & mini models",
+        tagline="GPT-6 Luna, Sol & Astra",
         default_url=DEFAULT_URLS["openai"],
         key_hint="Create or manage an API key in your OpenAI Platform account.",
         key_url="https://platform.openai.com/api-keys",
@@ -58,35 +58,35 @@ PROVIDER_CATALOG: dict[str, ProviderDescriptor] = {
         supports_discovery=True,
         starters=(
             {
-                "id": "gpt-5-mini",
-                "name": "GPT-5 mini",
+                "id": "gpt-6-luna",
+                "name": "GPT-6 Luna",
                 "tier": "fast",
-                "description": "Low-latency pick for fast tasting menus.",
+                "description": "Rapid, budget-friendly GPT-6 generation.",
             },
             {
-                "id": "gpt-5",
-                "name": "GPT-5",
+                "id": "gpt-6.2-sol",
+                "name": "GPT-6.2 Sol",
                 "tier": "balanced",
-                "description": "Balanced reasoning and taste nuance.",
+                "description": "High-performance everyday reasoning & synthesis.",
             },
             {
                 "id": "gpt-6.2-astra",
                 "name": "GPT-6.2 Astra",
                 "tier": "flagship",
-                "description": "Latest flagship for deep multi-title synthesis.",
+                "description": "Flagship model for deep multi-title taste pairing.",
             },
             {
-                "id": "gpt-5-pro",
-                "name": "GPT-5 Pro",
+                "id": "gpt-6.2-astra-pro",
+                "name": "GPT-6.2 Astra Pro",
                 "tier": "reasoning",
-                "description": "Extended reasoning for subtle taste notes.",
+                "description": "Extended reasoning for subtle taste nuance.",
             },
         ),
     ),
     "anthropic": ProviderDescriptor(
         id="anthropic",
         label="Anthropic",
-        tagline="Nuanced literary explanations",
+        tagline="Claude 5.5 & Fable 5.2",
         default_url=DEFAULT_URLS["anthropic"],
         key_hint="Use an API key from your Anthropic Console account.",
         key_url="https://console.anthropic.com/settings/keys",
@@ -110,15 +110,21 @@ PROVIDER_CATALOG: dict[str, ProviderDescriptor] = {
             {
                 "id": "claude-opus-5-5",
                 "name": "Claude Opus 5.5",
-                "tier": "reasoning",
+                "tier": "flagship",
                 "description": "Deepest long-context character & theme matching.",
+            },
+            {
+                "id": "claude-fable-5-2",
+                "name": "Claude Fable 5.2",
+                "tier": "reasoning",
+                "description": "Long-horizon reasoning over large histories.",
             },
         ),
     ),
     "gemini": ProviderDescriptor(
         id="gemini",
         label="Gemini",
-        tagline="Huge context & fast JSON",
+        tagline="3.8 Flash & Gemini 4",
         default_url=DEFAULT_URLS["gemini"],
         key_hint="Use a Gemini API key from Google AI Studio.",
         key_url="https://aistudio.google.com/apikey",
@@ -156,7 +162,7 @@ PROVIDER_CATALOG: dict[str, ProviderDescriptor] = {
     "deepseek": ProviderDescriptor(
         id="deepseek",
         label="DeepSeek",
-        tagline="High-value deep reasoning",
+        tagline="V4.1 Flash & V4 Pro",
         default_url=DEFAULT_URLS["deepseek"],
         key_hint="Use an API key from the DeepSeek Platform.",
         key_url="https://platform.deepseek.com/api_keys",
@@ -182,7 +188,7 @@ PROVIDER_CATALOG: dict[str, ProviderDescriptor] = {
     "openrouter": ProviderDescriptor(
         id="openrouter",
         label="OpenRouter",
-        tagline="One key, hundreds of models",
+        tagline="One key, live model hub",
         default_url=DEFAULT_URLS["openrouter"],
         key_hint="Use an OpenRouter key. Browse live models anytime; paste a key to cook.",
         key_url="https://openrouter.ai/keys",
@@ -192,10 +198,10 @@ PROVIDER_CATALOG: dict[str, ProviderDescriptor] = {
         supports_discovery=True,
         starters=(
             {
-                "id": "openai/gpt-5-mini",
-                "name": "OpenAI: GPT-5 mini",
-                "tier": "fast",
-                "description": "Quick routed GPT-5 mini.",
+                "id": "openai/gpt-6.2-sol",
+                "name": "OpenAI: GPT-6.2 Sol",
+                "tier": "balanced",
+                "description": "Balanced GPT-6.2 route on OpenRouter.",
             },
             {
                 "id": "anthropic/claude-sonnet-5.5",
@@ -204,16 +210,28 @@ PROVIDER_CATALOG: dict[str, ProviderDescriptor] = {
                 "description": "Balanced Claude Sonnet via OpenRouter.",
             },
             {
-                "id": "google/gemini-3.8-flash",
-                "name": "Google: Gemini 3.8 Flash",
-                "tier": "fast",
-                "description": "Fast long-context Gemini route.",
+                "id": "google/gemini-4-hydrogen",
+                "name": "Google: Gemini 4 Hydrogen",
+                "tier": "balanced",
+                "description": "Balanced Gemini 4 route.",
             },
             {
-                "id": "deepseek/deepseek-v4-pro",
-                "name": "DeepSeek: V4 Pro",
+                "id": "deepseek/deepseek-v4.1-flash",
+                "name": "DeepSeek: DeepSeek V4.1 Flash",
+                "tier": "fast",
+                "description": "Fast 1M-context DeepSeek route.",
+            },
+            {
+                "id": "openai/gpt-6.2-astra",
+                "name": "OpenAI: GPT-6.2 Astra",
+                "tier": "flagship",
+                "description": "Flagship OpenAI synthesis route.",
+            },
+            {
+                "id": "google/gemini-4-neon",
+                "name": "Google: Gemini 4 Neon",
                 "tier": "reasoning",
-                "description": "Deep reasoning via OpenRouter.",
+                "description": "Deep Gemini 4 reasoning route.",
             },
         ),
     ),
@@ -372,10 +390,14 @@ def infer_model_tier(provider: str, model_id: str, name: str = "") -> str:
     if any(tok in low for tok in ("reasoner", "thinking", "-r1", "deepseek-r1", "fable")):
         return "reasoning"
     if provider == "openai" or "openai/" in low:
-        if any(tok in low for tok in ("mini", "nano")):
-            return "fast"
         if any(tok in low for tok in ("-pro", "o1", "o3", "o4")):
             return "reasoning"
+        if any(tok in low for tok in ("mini", "nano", "luna", "terra")):
+            return "fast"
+        if "astra" in low:
+            return "flagship"
+        if "sol" in low:
+            return "balanced"
         if "gpt-6" in low:
             return "flagship"
         return "balanced"
@@ -383,7 +405,7 @@ def infer_model_tier(provider: str, model_id: str, name: str = "") -> str:
         if "haiku" in low:
             return "fast"
         if "opus" in low:
-            return "reasoning"
+            return "flagship"
         return "balanced"
     if provider == "gemini" or "google/" in low:
         if "flash" in low:
@@ -468,6 +490,7 @@ def _normalize_model(
     context_length: int | None = None,
     is_free: bool = False,
     owned_by: str = "",
+    created: int = 0,
 ) -> dict[str, Any]:
     display = (name or "").strip() or _format_display_name(model_id)
     tier = infer_model_tier(provider, model_id, display)
@@ -478,32 +501,29 @@ def _normalize_model(
         "context_length": context_length,
         "is_free": is_free,
         "owned_by": owned_by,
+        "_created": created,
     }
 
 
 def _prioritize_models(provider: str, models: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Put curated starter IDs first (in starter order), then remaining models."""
+    """Put curated starter IDs first (in starter order), then newest models descending."""
     desc = PROVIDER_CATALOG.get(provider)
     starter_order = {item["id"]: index for index, item in enumerate(desc.starters if desc else ())}
-    tier_rank = {"fast": 0, "balanced": 1, "flagship": 2, "reasoning": 3}
 
     def sort_key(entry: dict[str, Any]) -> tuple[int, int, int, str]:
         mid = entry["id"]
         if mid in starter_order:
             return (0, starter_order[mid], 0, mid.lower())
-        return (
-            1,
-            tier_rank.get(entry.get("tier", "balanced"), 2),
-            0 if entry.get("is_free") else 1,
-            mid.lower(),
-        )
+        created = int(entry.get("_created") or 0)
+        return (1, -created, 0 if entry.get("is_free") else 1, mid.lower())
 
     deduped: dict[str, dict[str, Any]] = {}
     for item in models:
         mid = str(item.get("id") or "").strip()
         if mid and mid not in deduped:
             deduped[mid] = item
-    return sorted(deduped.values(), key=sort_key)[:_MAX_DISCOVERED_MODELS]
+    sorted_items = sorted(deduped.values(), key=sort_key)[:_MAX_DISCOVERED_MODELS]
+    return [{k: v for k, v in item.items() if k != "_created"} for item in sorted_items]
 
 
 def _translate_http_error(provider_label: str, exc: httpx.HTTPStatusError) -> ModelDiscoveryError:
@@ -545,7 +565,7 @@ def _fetch_openrouter_public_models(base_url: str, client: httpx.Client) -> list
     parsed: list[dict[str, Any]] = []
     for item in raw_items:
         mid = str(item.get("id") or "").strip()
-        if not mid:
+        if not mid or mid.endswith(":batch"):
             continue
         arch = item.get("architecture") or {}
         output_mods = arch.get("output_modalities") or []
@@ -557,6 +577,8 @@ def _fetch_openrouter_public_models(base_url: str, client: httpx.Client) -> list
         is_free = mid.endswith(":free") or (prompt_price == "0" and comp_price == "0")
         ctx = item.get("context_length")
         context_length = int(ctx) if isinstance(ctx, (int, float)) and ctx > 0 else None
+        created = item.get("created")
+        created_ts = int(created) if isinstance(created, (int, float)) else 0
         parsed.append(
             _normalize_model(
                 provider="openrouter",
@@ -565,6 +587,7 @@ def _fetch_openrouter_public_models(base_url: str, client: httpx.Client) -> list
                 context_length=context_length,
                 is_free=is_free,
                 owned_by=mid.split("/", 1)[0] if "/" in mid else "",
+                created=created_ts,
             )
         )
 
@@ -739,12 +762,15 @@ def discover_provider_models(
                     continue
                 if provider == "openai" and _is_non_chat_openai_model(mid):
                     continue
+                created = item.get("created")
+                created_ts = int(created) if isinstance(created, (int, float)) else 0
                 models.append(
                     _normalize_model(
                         provider=provider,
                         model_id=mid,
                         name=str(item.get("name") or "").strip() or mid,
                         owned_by=str(item.get("owned_by") or provider),
+                        created=created_ts,
                     )
                 )
             return {

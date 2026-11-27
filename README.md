@@ -30,7 +30,7 @@ It combines:
 - an unwatched candidate pool;
 - a model selected and paid for by you.
 
-The result is a short tasting menu instead of an endless popularity feed. Each recommendation includes a predicted fit, an explanation, a title from your history that helped shape the match, and (when matched in AniList or MyAnimeList) cover artwork, format, episode count, studio, and genre badges.
+The result is a short tasting menu instead of an endless popularity feed. Each recommendation includes a predicted fit, an explanation, a title from your history that helped shape the match, and (when matched in AniList or MyAnimeList) a full banner backdrop, anime poster artwork, format, episode count, studio, and genre badges.
 
 ## Public counter
 
